@@ -1,5 +1,5 @@
 # OverflowOS
-OverflowOS is a UEFI-based Operating System with a monolithic Kernel, fully written in Rust. The system library of OverflowOS is not compatible with POSIX, but later I want to provide a library for POSIX-compatibility.
+OverflowOS is a UEFI-based Operating System with a monolithic Kernel, fully written in Rust.
 
 ## Install Dependencies
 Here are a few steps to install all dependencies to setup a development environment for OverflowOS
