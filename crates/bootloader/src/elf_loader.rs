@@ -39,7 +39,7 @@ pub fn parse_elf_file(file_buffer: &[u8]) -> Result<(), Error> {
                 MemoryType::LOADER_CODE,
                 num_pages).map_err(|err| err.status())?;
             if vaddr != (segment.p_vaddr & !0x0FFF) {
-                panic!("Address changed from 0x{:X} to {:X}", vaddr, (segment.p_vaddr & !0x0FFF));
+                panic!("Firmware didn't respected our requested address (0x{:X} to 0x{:X})", vaddr, (segment.p_vaddr & !0x0FFF));
             }
 
             unsafe { boot_services.set_mem((segment.p_vaddr & !0x0FFF) as _, num_pages * 4096, 0) };
