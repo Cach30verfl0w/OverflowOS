@@ -80,23 +80,23 @@ impl Log for Logger {
         match record.level() {
             Level::Error => {
                 color_stack.push_color(Color::Red, Color::Black);
-                Logger::output_string("Error");
+                Logger::output_string(" Error ");
             }
             Level::Warn => {
                 color_stack.push_color(Color::Yellow, Color::Black);
-                Logger::output_string("Warn");
+                Logger::output_string(" Warn  ");
             }
             Level::Info => {
                 color_stack.push_color(Color::Green, Color::Black);
-                Logger::output_string("Info");
+                Logger::output_string(" Info  ");
             }
             Level::Debug => {
-                color_stack.push_color(Color::LightCyan, Color::Black);
-                Logger::output_string("Debug");
+                color_stack.push_color(Color::Cyan, Color::Black);
+                Logger::output_string(" Debug ");
             }
             Level::Trace => {
-                color_stack.push_color(Color::Cyan, Color::Black);
-                Logger::output_string("Trace");
+                color_stack.push_color(Color::LightCyan, Color::Black);
+                Logger::output_string(" Trace ");
             }
         }
         color_stack.pop_color();
