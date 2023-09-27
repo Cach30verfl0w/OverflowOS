@@ -11,8 +11,6 @@ pub enum Error {
     OutOfBounds(usize),
     #[error("The resource is already open")]
     ResourceOpen,
-    #[error("The requested resource is not open")]
-    ResourceNotOpen,
     #[error("Unable to format string")]
     FromStrError(#[from] FromStrError),
     #[error("The requested resource is not a file")]

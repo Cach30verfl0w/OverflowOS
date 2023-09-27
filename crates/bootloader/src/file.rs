@@ -54,20 +54,39 @@ impl<'a> SimpleFileSystemProvider<'a> {
     }
 
     pub(crate) fn open_file(&mut self, volume_index: usize, file_path: Cow<str>, mode: FileMode) -> Result<RegularFile, Error> {
-        match self.open_volumes.iter_mut().find(|(index, _)| *index == volume_index).map(|(_, dir)| dir) {
-            Some(volume) => {
-                // Get file handle
-                let file_handle = volume.open(CString16::try_from(file_path.as_ref())?.as_ref(), mode, FileAttribute::empty())
-                    .map_err(|err| err.status())?;
+        let volume = self.open_volumes.iter_mut().find(|(index, _)| *index == volume_index)
+            .map(|(_, dir)| dir);
 
-                // Get handle as file
-                match file_handle.into_regular_file() {
-                    Some(file_handle) => Ok(file_handle),
-                    None => Err(Error::NotFile)
-                }
-            },
-            None => Err(Error::ResourceNotOpen)
+        // Open volume if volume is not opened
+        if volume.is_none() {
+            self.open_volume(volume_index)?;
+            return self.open_file(volume_index, file_path, mode);
         }
+        let volume = volume.unwrap();
+
+        // Get file handle
+        let file_handle = volume.open(CString16::try_from(file_path.as_ref())?.as_ref(), mode, FileAttribute::empty())
+            .map_err(|err| err.status())?;
+
+        // Get handle as file
+        match file_handle.into_regular_file() {
+            Some(file_handle) => Ok(file_handle),
+            None => Err(Error::NotFile)
+        }
+    }
+
+    pub(crate) fn detect_bootable_volumes(&mut self) -> Result<Vec<usize>, Error> {
+        let mut detected_volumes_indexes = Vec::new();
+        for i in 0..self.found_volumes() {
+            // Filter volumes without KERNEL.ELF
+            if self.open_file(i, Cow::Borrowed("KERNEL.ELF"), FileMode::Read).is_err() {
+                continue;
+            }
+
+            // Push index of volume
+            detected_volumes_indexes.push(i);
+        }
+        Ok(detected_volumes_indexes)
     }
 
     pub(crate) fn found_volumes(&self) -> usize {

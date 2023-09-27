@@ -9,12 +9,10 @@ pub(crate) mod halt;
 pub(crate) mod file;
 pub(crate) mod error;
 
-use alloc::borrow::Cow;
 use core::panic::PanicInfo;
-use log::{debug, error, info, Level, LevelFilter};
+use log::{error, info, Level, LevelFilter};
 use uefi::{entry, Handle, Status};
 use uefi::prelude::{Boot, SystemTable};
-use uefi::proto::media::file::FileMode;
 use crate::file::SimpleFileSystemProvider;
 use crate::halt::halt_cpu;
 use crate::logger::Logger;
@@ -58,9 +56,20 @@ fn main(_image_handle: Handle, mut system_table: SystemTable<Boot>) -> Status {
     };
     info!("Successfully initialized File System with {} volume(s)\n", file_system.found_volumes());
 
-    file_system.open_volume(0).unwrap();
-    let _file = file_system.open_file(0, Cow::Borrowed("KERNEL.ELF"), FileMode::Read).unwrap();
-    debug!("Successfully acquired file handle of KERNEL.ELF");
+    // Detect bootable volumes
+    let bootable_volumes = match file_system.detect_bootable_volumes() {
+        Err(error) => {
+            error!("Unable to enumerate bootable volumes => {}\n", error);
+            halt_cpu();
+        },
+        Ok(bootable_volumes) => bootable_volumes
+    };
+    if bootable_volumes.len() == 0 {
+        error!("No bootable volumes detected, aborting execution");
+        halt_cpu();
+    }
+
+    info!("Detected {} bootable volume(s), continue execution", bootable_volumes.len());
 
     halt_cpu();
 }
