@@ -3,12 +3,14 @@
 
 extern crate alloc;
 
-pub mod logger;
+pub(crate) mod logger;
+pub(crate) mod halt;
 
 use core::panic::PanicInfo;
 use log::{info, Level, LevelFilter};
 use uefi::{entry, Handle, Status};
 use uefi::prelude::{Boot, SystemTable};
+use crate::halt::halt_cpu;
 use crate::logger::Logger;
 
 static mut SYSTEM_TABLE: Option<SystemTable<Boot>> = None;
@@ -16,7 +18,7 @@ static mut LOGGER: Option<Logger> = None;
 
 #[panic_handler]
 fn panic(_info: &PanicInfo) -> ! {
-    loop {}
+    halt_cpu();
 }
 
 #[entry]
@@ -38,5 +40,5 @@ fn main(_image_handle: Handle, mut system_table: SystemTable<Boot>) -> Status {
 
     // Run bootloader
     info!("Welcome to OverflowOS Bootloader v{}", env!("CARGO_PKG_VERSION"));
-    loop {}
+    halt_cpu();
 }
