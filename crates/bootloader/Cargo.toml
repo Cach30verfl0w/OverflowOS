@@ -14,3 +14,11 @@ edition.workspace = true
 [dependencies.uefi]
 version = "0.24.0"
 features = ["alloc", "global_allocator"]
+
+# log as dependency for console printing
+[dependencies.log]
+version = "0.4.20"
+
+# spin as dependency for Mutex
+[dependencies.spin]
+version = "0.9.8"
