@@ -9,3 +9,6 @@ license-file.workspace = true
 repository.workspace = true
 authors.workspace = true
 edition.workspace = true
+
+[dependencies]
+uefi = { version = "0.24.0", features = ["alloc", "global_allocator"] }

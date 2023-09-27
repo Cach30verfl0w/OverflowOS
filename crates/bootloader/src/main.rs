@@ -8,11 +8,16 @@ pub(crate) mod logger;
 pub(crate) mod halt;
 pub(crate) mod file;
 pub(crate) mod error;
+pub(crate) mod elf_loader;
 
+use alloc::borrow::Cow;
+use alloc::vec;
 use core::panic::PanicInfo;
 use log::{error, info, Level, LevelFilter};
 use uefi::{entry, Handle, Status};
 use uefi::prelude::{Boot, SystemTable};
+use uefi::proto::media::file::{File, FileInfo, FileMode};
+use crate::elf_loader::parse_elf_file;
 use crate::file::SimpleFileSystemProvider;
 use crate::halt::halt_cpu;
 use crate::logger::Logger;
@@ -47,29 +52,25 @@ fn main(_image_handle: Handle, mut system_table: SystemTable<Boot>) -> Status {
     info!("Welcome to OverflowOS Bootloader v{}\n", env!("CARGO_PKG_VERSION"));
 
     // Initialize Simple FileSystem
-    let mut file_system = match SimpleFileSystemProvider::new() {
-        Err(error) => {
-            error!("Unable to initialize FileSystem => {}\n", error);
-            halt_cpu();
-        },
-        Ok(provider) => provider
-    };
+    let mut file_system = SimpleFileSystemProvider::new()
+        .unwrap_or_else(|err| panic!("Unable to initialize FileSystem: {}", err));
     info!("Successfully initialized File System with {} volume(s)\n", file_system.found_volumes());
 
-    // Detect bootable volumes
-    let bootable_volumes = match file_system.detect_bootable_volumes() {
-        Err(error) => {
-            error!("Unable to enumerate bootable volumes => {}\n", error);
-            halt_cpu();
-        },
-        Ok(bootable_volumes) => bootable_volumes
-    };
-    if bootable_volumes.len() == 0 {
-        error!("No bootable volumes detected, aborting execution");
-        halt_cpu();
-    }
+    // Open first volume and open kernel
+    file_system.open_volume(0).unwrap_or_else(|err| panic!("Unable to open own volume: {}", err));
 
-    info!("Detected {} bootable volume(s), continue execution", bootable_volumes.len());
+    let mut file = file_system.open_file(0, Cow::Borrowed("KERNEL.ELF"), FileMode::Read)
+        .unwrap_or_else(|err| panic!("Unable to open Kernel as file: {}", err));
 
+    // Read kernel
+    let file_size = file.get_boxed_info::<FileInfo>()
+        .unwrap_or_else(|err| panic!("Unable to read Kernel as file: {}", err));
+    let mut file_buffer = vec![0; file_size.file_size() as usize];
+    file.read(file_buffer.as_mut_slice())
+        .unwrap_or_else(|err| panic!("Unable to read Kernel as file: {}", err));
+
+    // Parse as ELF file
+    parse_elf_file(file_buffer.as_slice())
+        .unwrap_or_else(|err| panic!("Unable to load Kernel: {}", err));
     halt_cpu();
 }

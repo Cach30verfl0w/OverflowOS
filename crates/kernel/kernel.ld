@@ -1,0 +1,1 @@
+ENTRY(kernel_entry)

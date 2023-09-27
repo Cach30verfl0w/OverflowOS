@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::fs::{create_dir, read_dir, remove_dir, remove_file};
 use std::path::{absolute, Path, PathBuf};
 use std::process::exit;
@@ -35,7 +36,7 @@ pub(crate) fn build_projects_with_cargo(cargo_path: PathBuf, crates_directory: &
                              if args.bootloader.eq(package.name()) {
                                  "uefi"
                              } else {
-                                 "none"
+                                 "none.json"
                              });
 
         // Build project with Cargo
@@ -59,7 +60,8 @@ pub(crate) fn build_projects_with_cargo(cargo_path: PathBuf, crates_directory: &
                 image_generator.copy_into(format!("target/{}/debug/{}.efi", target, package.name()), "EFI/BOOT/BOOTIA32.EFI")?;
             }
         } else {
-            image_generator.copy_into(format!("target/{}/debug/{}", target, package.name()), format!("{}.ELF", package.name()).to_uppercase())?;
+            image_generator.copy_into(format!("target/{}/debug/{}", target.replace(".json", ""),
+                                              package.name()), format!("{}.ELF", package.name()).to_uppercase())?;
         }
     }
 

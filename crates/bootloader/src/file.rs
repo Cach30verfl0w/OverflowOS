@@ -75,20 +75,6 @@ impl<'a> SimpleFileSystemProvider<'a> {
         }
     }
 
-    pub(crate) fn detect_bootable_volumes(&mut self) -> Result<Vec<usize>, Error> {
-        let mut detected_volumes_indexes = Vec::new();
-        for i in 0..self.found_volumes() {
-            // Filter volumes without KERNEL.ELF
-            if self.open_file(i, Cow::Borrowed("KERNEL.ELF"), FileMode::Read).is_err() {
-                continue;
-            }
-
-            // Push index of volume
-            detected_volumes_indexes.push(i);
-        }
-        Ok(detected_volumes_indexes)
-    }
-
     pub(crate) fn found_volumes(&self) -> usize {
         self.volume_handles.len()
     }

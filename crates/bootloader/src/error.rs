@@ -1,3 +1,4 @@
+use elf::ParseError;
 use thiserror_no_std::Error;
 use uefi::data_types::FromStrError;
 use uefi::Status;
@@ -14,5 +15,7 @@ pub enum Error {
     #[error("Unable to format string")]
     FromStrError(#[from] FromStrError),
     #[error("The requested resource is not a file")]
-    NotFile
+    NotFile,
+    #[error("{0}")]
+    ElfError(#[from] ParseError)
 }

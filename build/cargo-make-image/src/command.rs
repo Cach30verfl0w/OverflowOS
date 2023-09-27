@@ -1,6 +1,6 @@
 use std::path::Path;
 use std::process::{Command, Stdio};
-use log::trace;
+use log::debug;
 use crate::error::Error;
 
 pub(crate) fn run_command(executable: &Path, working_folder: Option<&Path>,
@@ -24,7 +24,7 @@ pub(crate) fn run_command(executable: &Path, working_folder: Option<&Path>,
         process_arguments.push_str(arg);
         command.arg(arg);
     });
-    trace!("Running process '{}' => {}", executable.to_str().unwrap(), process_arguments);
+    debug!("Running process '{}' => {}", executable.to_str().unwrap(), process_arguments);
 
     // Execute process and validate exit code
     let status = command.status()?;

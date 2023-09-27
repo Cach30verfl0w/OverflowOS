@@ -60,6 +60,9 @@ pub struct Arguments {
     #[arg(long, short, default_value_t = Architecture::system())]
     architecture: Architecture,
 
+    #[arg(long)]
+    entrypoints: Vec<String>,
+
     /// The size of all sectors in the image file
     #[arg(long, default_value_t = 512)]
     sector_size: u16,
