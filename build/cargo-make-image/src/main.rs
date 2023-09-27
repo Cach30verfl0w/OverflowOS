@@ -4,6 +4,7 @@ pub mod arch;
 pub mod command;
 pub mod error;
 pub mod build;
+pub mod image_generator;
 
 use clap::Parser;
 use colorful::{Color, Colorful};
@@ -13,6 +14,7 @@ use std::path::{Path, PathBuf};
 use std::process::exit;
 use crate::arch::Architecture;
 use crate::build::build_projects_with_cargo;
+use crate::command::run_command;
 
 // https://stackoverflow.com/questions/37498864/finding-executable-in-path-with-rust/37499032#37499032
 fn find_in_path<P>(exe_name: P) -> Option<PathBuf> where P: AsRef<Path> {
@@ -46,13 +48,29 @@ pub struct Arguments {
     #[arg(long, short, default_value_t = false)]
     qemu_run: bool,
 
+    /// The name of the bootloader crate
+    #[arg(long, short, default_value = "bootloader")]
+    bootloader: String,
+
     /// Non-default folder for the QEMU system executables
     #[arg(long)]
     qemu_system_folder: Option<String>,
 
     /// Architectural target of the operating system and the QEMU runner
-    #[arg(long, short)]
-    architecture: Option<Architecture>,
+    #[arg(long, short, default_value_t = Architecture::system())]
+    architecture: Architecture,
+
+    /// The size of all sectors in the image file
+    #[arg(long, default_value_t = 512)]
+    sector_size: u16,
+
+    /// The count of sectors in the image file
+    #[arg(long, default_value_t = 93750)]
+    sector_count: u32,
+
+    /// The path to the OVMF firmware, if you run QEMU
+    #[arg(long, default_value = "OVMF.fd")]
+    ovmf_path: String,
 
     /// Set the log level
     #[arg(long, short)]
@@ -72,8 +90,8 @@ fn main() {
     // Get arguments, configure logger and get target architecture
     let args = Arguments::parse();
     log::set_max_level(args.level.unwrap_or(Level::Info).to_level_filter());
-    let target_arch = args.architecture.unwrap_or(Architecture::system());
-    debug!("Current target architecture {} {}", "=>".color(Color::DarkGray), String::from(target_arch).color(Color::LightGreen2));
+    debug!("Current target architecture {} {}", "=>".color(Color::DarkGray), String::from(args.architecture)
+        .color(Color::LightGreen2));
 
     // Get and validate path of Cargo
     let cargo_path = match find_in_path("cargo") {
@@ -102,7 +120,7 @@ fn main() {
         info!("Preparing for running the Operating System image in QEMU");
 
         // Generate QEMU path and validate
-        let qemu_executable = format!("qemu-system-{}", String::from(target_arch));
+        let qemu_executable = format!("qemu-system-{}", String::from(args.architecture));
         debug!("Searching for '{}' in arguments or path", qemu_executable.clone().color(Color::Red));
         let qemu_path = args.qemu_system_folder
             .map(|path| Path::new(&path).join(&qemu_executable))
@@ -115,5 +133,24 @@ fn main() {
             error!("Unable to recognize path of QEMU {} {} QEMU executable found in arguments or $PATH", "=>".color(Color::DarkGray), "No".red());
             exit(-4);
         }
+
+        // Run QEMU
+        info!("Run QEMU, redirect subprocess stdout and stderr to process stdout and stderr");
+        match run_command(qemu_path.as_path(), None, &[
+            "-bios",
+            &args.ovmf_path,
+            "-cdrom",
+            &args.iso_file,
+            "-m",
+            "512"
+        ], true) {
+            Ok(()) => {},
+            Err(error) => {
+                error!("Unable to execute QEMU => {}", error);
+                exit(-5);
+            }
+        }
     }
+
+    info!("Finished execution. Thanks for using this tool");
 }

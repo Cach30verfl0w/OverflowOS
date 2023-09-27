@@ -1,11 +1,10 @@
-use std::borrow::Cow;
 use std::path::Path;
 use std::process::{Command, Stdio};
-use log::debug;
+use log::trace;
 use crate::error::Error;
 
 pub(crate) fn run_command(executable: &Path, working_folder: Option<&Path>,
-                                           arguments: &[Cow<str>], redirect_stdout: bool) -> Result<(), Error> {
+                                           arguments: &[&str], redirect_stdout: bool) -> Result<(), Error> {
     // Create command and set working folder if defined
     let mut command = Command::new(&executable);
     if let Some(working_folder) = working_folder {
@@ -25,7 +24,7 @@ pub(crate) fn run_command(executable: &Path, working_folder: Option<&Path>,
         process_arguments.push_str(arg);
         command.arg(arg);
     });
-    debug!("Running process '{}' => {}", executable.to_str().unwrap(), process_arguments);
+    trace!("Running process '{}' => {}", executable.to_str().unwrap(), process_arguments);
 
     // Execute process and validate exit code
     let status = command.status()?;

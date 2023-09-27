@@ -4,3 +4,7 @@ target/
 
 # IntelliJ Idea directories
 .idea/
+
+# Others
+*.iso
+*.img

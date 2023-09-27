@@ -1,4 +1,5 @@
 use std::env;
+use std::fmt::{Display, Formatter};
 use std::process::exit;
 use clap::ValueEnum;
 use log::error;
@@ -11,8 +12,14 @@ pub(crate) enum Architecture {
     ARM64
 }
 
-impl From<Architecture> for String {
+impl<'a> From<&'a Architecture> for String {
     #[inline]
+    fn from(value: &'a Architecture) -> Self {
+        String::from(*value)
+    }
+}
+
+impl From<Architecture> for String {
     fn from(value: Architecture) -> Self {
         match value {
             Architecture::X86_64 => "x86_64",
@@ -23,9 +30,14 @@ impl From<Architecture> for String {
     }
 }
 
+impl Display for Architecture {
+    fn fmt(&self, formatter: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(formatter, "{}", String::from(self).replace("_", "-"))
+    }
+}
+
 impl Architecture {
 
-    #[inline]
     pub(crate) fn system() -> Architecture {
         match env::consts::ARCH {
             "x86" => Self::X86,
@@ -36,6 +48,14 @@ impl Architecture {
                 error!("Unable to get system architecture => Unsupported architecture {}", arch);
                 exit(-1);
             }
+        }
+    }
+
+    #[inline]
+    pub(crate) fn is64bit(&self) -> bool {
+        match self {
+            Architecture::X86_64 | Architecture::ARM64 => true,
+            Architecture::X86 | Architecture::ARM => false
         }
     }
 

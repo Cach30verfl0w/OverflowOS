@@ -11,6 +11,8 @@ fn panic(_info: &PanicInfo) -> ! {
 }
 
 #[entry]
-fn main(_image_handle: Handle, mut _system_table: SystemTable<Boot>) -> Status {
+fn main(_image_handle: Handle, mut system_table: SystemTable<Boot>) -> Status {
+    system_table.stdout().clear().unwrap();
+    loop {}
     Status::SUCCESS
 }

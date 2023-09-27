@@ -5,14 +5,14 @@ use thiserror::Error;
 pub enum Error {
     #[error("Process '{0}' exited with exit code {1}")]
     FailedProcess(String, i32),
-    #[error("{0}")]
+    #[error("System IO: {0}")]
     IOError(#[from] std::io::Error),
-    #[error("{0}")]
+    #[error("Cargo Reader: {0}")]
     CargoError(#[from] cargo_toml::Error),
     #[error("Invalid cargo manifest at {0}")]
     InvalidManifest(String),
-    #[error("{0}")]
-    TomlError(#[from] toml::de::Error),
-    #[error("{0}")]
-    Utf8Error(#[from] FromUtf8Error)
+    #[error("FromUTF8Error: {0}")]
+    Utf8Error(#[from] FromUtf8Error),
+    #[error("Illegal parameter '{0}'")]
+    InvalidParameter(String)
 }
