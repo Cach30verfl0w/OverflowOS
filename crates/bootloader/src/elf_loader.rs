@@ -2,9 +2,7 @@ use core::{mem, slice};
 use elf::{abi, ElfBytes};
 use elf::endian::AnyEndian;
 use log::{debug, info};
-use uefi::prelude::Boot;
 use uefi::table::boot::{AllocateType, MemoryType};
-use uefi::table::SystemTable;
 use crate::error::Error;
 use crate::SYSTEM_TABLE;
 
@@ -36,17 +34,19 @@ pub fn parse_elf_file(file_buffer: &[u8]) -> Result<(), Error> {
             };
 
             // Allocate and zero page
-            boot_services.allocate_pages(AllocateType::Address(segment.p_vaddr & !0x0FFF),
-                                         MemoryType::LOADER_CODE, num_pages)
-                .map_err(|err| err.status())?;
+            let vaddr = boot_services.allocate_pages(
+                AllocateType::Address(segment.p_vaddr & !0x0FFF),
+                MemoryType::LOADER_CODE,
+                num_pages).map_err(|err| err.status())?;
+            if vaddr != (segment.p_vaddr & !0x0FFF) {
+                panic!("Address changed from 0x{:X} to {:X}", vaddr, (segment.p_vaddr & !0x0FFF));
+            }
 
-            let mut addr = (segment.p_vaddr & !0x0FFF) as *mut u8;
-            unsafe { boot_services.set_mem(addr, num_pages * 4096, 0) };
+            unsafe { boot_services.set_mem((segment.p_vaddr & !0x0FFF) as _, num_pages * 4096, 0) };
             info!("Allocated {} pages ({} bytes) on 0x{:X} for KERNEL.ELF\n", num_pages,
                 segment.p_memsz, segment.p_vaddr);
 
             // Insert data into memory
-            info!("{}: {} == {}\n", segment.p_type, elf.segment_data(&segment)?.len(), segment.p_memsz as usize);
             unsafe {
                 slice::from_raw_parts_mut(segment.p_vaddr as *mut u8, segment.p_memsz as usize)
             }.copy_from_slice(elf.segment_data(&segment)?);
@@ -54,7 +54,7 @@ pub fn parse_elf_file(file_buffer: &[u8]) -> Result<(), Error> {
     }
 
     // Locate kernel_entry function
-    let entry_point: fn(&mut SystemTable<Boot>) = unsafe { mem::transmute(elf.ehdr.e_entry) };
-    entry_point(unsafe { SYSTEM_TABLE.as_mut() }.unwrap());
+    let entry_point: unsafe extern "cdecl" fn(i32) -> i32 = unsafe { mem::transmute(elf.ehdr.e_entry) };
+    info!("A {}", unsafe { entry_point(12) });
     Ok(())
 }

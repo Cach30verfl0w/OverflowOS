@@ -2,7 +2,6 @@
 #![no_main]
 
 use core::panic::PanicInfo;
-use uefi::prelude::{Boot, SystemTable};
 
 #[panic_handler]
 fn panic(_info: &PanicInfo) -> ! {
@@ -10,7 +9,6 @@ fn panic(_info: &PanicInfo) -> ! {
 }
 
 #[no_mangle]
-extern "C" fn kernel_entry(system_table: &mut SystemTable<Boot>) {
-    system_table.stdout().clear().unwrap();
-    panic!("Test\n");
+unsafe extern "cdecl" fn kernel_entry(value: i32) -> i32 {
+    value
 }
