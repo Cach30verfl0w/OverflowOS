@@ -1,0 +1,11 @@
+[package]
+name = "kernel"
+description = "This is the project of the UEFI-based OverflowOS monolithic kernel"
+categories = ["memory-management", "no-std", "embedded"]
+version = "1.0.0-dev.1"
+
+# Variables from workspace
+license-file.workspace = true
+repository.workspace = true
+authors.workspace = true
+edition.workspace = true

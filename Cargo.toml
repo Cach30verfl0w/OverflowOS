@@ -1,0 +1,15 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/*",
+    "build/*"
+]
+
+[workspace.package]
+authors = ["Cedric Hammes <cach30verfl0w@gmail.com>"]
+repository = "https://github.com/Cach30verfl0w/OverflowOS"
+license-file = "../../LICENSE"
+edition = "2021"
+
+[workspace.dependencies]
+thiserror-no-std = "2.0.2"
