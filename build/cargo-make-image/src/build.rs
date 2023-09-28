@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::fs::{create_dir, read_dir, remove_dir, remove_file};
 use std::path::{absolute, Path, PathBuf};
 use std::process::exit;
@@ -53,13 +52,14 @@ pub(crate) fn build_projects_with_cargo(cargo_path: PathBuf, crates_directory: &
         ], args.stdout_redirect)?;
 
         // Copy file into image
+        let library = crates_directory.join(package.name()).join("src/lib.rs").as_path().exists();
         if args.bootloader.eq(package.name()) {
             if args.architecture.is64bit() {
                 image_generator.copy_into(format!("target/{}/debug/{}.efi", target, package.name()), "EFI/BOOT/BOOTX64.EFI")?;
             } else {
                 image_generator.copy_into(format!("target/{}/debug/{}.efi", target, package.name()), "EFI/BOOT/BOOTIA32.EFI")?;
             }
-        } else {
+        } else if !library {
             image_generator.copy_into(format!("target/{}/debug/{}", target.replace(".json", ""),
                                               package.name()), format!("{}.ELF", package.name()).to_uppercase())?;
         }

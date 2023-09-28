@@ -5,7 +5,6 @@
 extern crate alloc;
 
 pub(crate) mod logger;
-pub(crate) mod halt;
 pub(crate) mod file;
 pub(crate) mod error;
 pub(crate) mod elf_loader;
@@ -17,9 +16,10 @@ use log::{error, info, Level, LevelFilter};
 use uefi::{entry, Handle, Status};
 use uefi::prelude::{Boot, SystemTable};
 use uefi::proto::media::file::{File, FileInfo, FileMode};
+use libcpu::gdt::{GDTDescriptor, GlobalDescriptorTable};
+use libcpu::halt_cpu;
 use crate::elf_loader::parse_elf_file;
 use crate::file::SimpleFileSystemProvider;
-use crate::halt::halt_cpu;
 use crate::logger::Logger;
 
 static mut SYSTEM_TABLE: Option<SystemTable<Boot>> = None;

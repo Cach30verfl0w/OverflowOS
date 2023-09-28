@@ -1,0 +1,23 @@
+#![no_std]
+
+extern crate alloc;
+
+// x86/x86_64
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+mod x86;
+
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+pub use x86::*;
+
+// ARM/ARM64
+#[cfg(any(target_arch = "arm", target_arch = "arm64"))]
+mod arm;
+
+#[cfg(any(target_arch = "arm", target_arch = "arm64"))]
+pub use arm::*;
+
+pub fn halt_cpu() -> ! {
+    loop {
+        wait_for_interrupts();
+    }
+}
