@@ -1,4 +1,5 @@
 pub mod gdt;
+pub mod idt;
 
 use core::arch::asm;
 

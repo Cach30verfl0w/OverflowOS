@@ -1,15 +1,20 @@
-use std::env;
-use std::fmt::{Display, Formatter};
-use std::process::exit;
 use clap::ValueEnum;
 use log::error;
+use std::{
+    env,
+    fmt::{
+        Display,
+        Formatter,
+    },
+    process::exit,
+};
 
 #[derive(ValueEnum, Clone, Copy, Ord, PartialOrd, Eq, PartialEq, Debug, Hash)]
 pub(crate) enum Architecture {
     X86_64,
     X86,
     ARM,
-    ARM64
+    ARM64,
 }
 
 impl<'a> From<&'a Architecture> for String {
@@ -25,8 +30,9 @@ impl From<Architecture> for String {
             Architecture::X86_64 => "x86_64",
             Architecture::X86 => "x86",
             Architecture::ARM => "arm",
-            Architecture::ARM64 => "arm64"
-        }.to_string()
+            Architecture::ARM64 => "arm64",
+        }
+        .to_string()
     }
 }
 
@@ -37,7 +43,6 @@ impl Display for Architecture {
 }
 
 impl Architecture {
-
     pub(crate) fn system() -> Architecture {
         match env::consts::ARCH {
             "x86" => Self::X86,
@@ -55,8 +60,7 @@ impl Architecture {
     pub(crate) fn is64bit(&self) -> bool {
         match self {
             Architecture::X86_64 | Architecture::ARM64 => true,
-            Architecture::X86 | Architecture::ARM => false
+            Architecture::X86 | Architecture::ARM => false,
         }
     }
-
 }

@@ -1,0 +1,13 @@
+wrap_comments = true
+fn_params_layout = "Compressed"
+force_multiline_blocks = true
+format_code_in_doc_comments = true
+format_strings = true
+imports_layout = "Vertical"
+imports_granularity = "Crate"
+
+# Widths
+comment_width = 102
+max_width = 102
+fn_call_width = 80
+inline_attribute_width = 50

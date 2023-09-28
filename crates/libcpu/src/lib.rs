@@ -16,7 +16,12 @@ mod arm;
 #[cfg(any(target_arch = "arm", target_arch = "arm64"))]
 pub use arm::*;
 
-#[cfg(not(any(target_arch = "arm", target_arch = "arm64", target_arch = "x86", target_arch = "x86_64")))]
+#[cfg(not(any(
+    target_arch = "arm",
+    target_arch = "arm64",
+    target_arch = "x86",
+    target_arch = "x86_64"
+)))]
 compile_error!("Unsupported architecture");
 
 pub fn halt_cpu() -> ! {

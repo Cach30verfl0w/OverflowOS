@@ -14,5 +14,5 @@ pub enum Error {
     #[error("FromUTF8Error: {0}")]
     Utf8Error(#[from] FromUtf8Error),
     #[error("Illegal parameter '{0}'")]
-    InvalidParameter(String)
+    InvalidParameter(String),
 }

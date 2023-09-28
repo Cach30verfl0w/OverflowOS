@@ -4,9 +4,14 @@
 //! - [x86 Handling Exceptions](https://hackernoon.com/x86-handling-exceptions-lds3uxc)
 //! - [osdev Global Descriptor Table](https://wiki.osdev.org/Global_Descriptor_Table)
 
-use core::arch::asm;
-use core::mem::size_of;
-use bitflags::{bitflags, Flags};
+use bitflags::{
+    bitflags,
+    Flags,
+};
+use core::{
+    arch::asm,
+    mem::size_of,
+};
 
 /// This structure represents the privilege level for the descriptor. The CPU supports a few
 /// privilege levels.
@@ -48,13 +53,13 @@ pub enum PrivilegeLevel {
     /// running applications. This ring grant the least privileges but the highest protection by
     /// the hardware. The communication with the hardware resources is handled over the kernel
     /// with System Calls.
-    Ring3 = 0b0110_0000
+    Ring3 = 0b0110_0000,
 }
 
 bitflags! {
     /// This structure represents most of the flags for the access byte in the descriptor.
     ///
-    /// Here is a list of all bytes with description:
+    /// Here is a list of all flags with description:
     /// - [DescriptorAccess::ACCESSED] - This bit is set by the CPU when the CPU accesses the
     /// descriptor. If the descriptor is stored in read only pages and this bit is set to 0, the
     /// CPU will trigger a page fault. You should set this bit.
@@ -71,7 +76,7 @@ bitflags! {
     ///
     /// # See also
     /// - [Global Descriptor Table](https://wiki.osdev.org/Global_Descriptor_Table) under
-    /// Segment Descriptor/DescriptorAccess Byte
+    /// Segment Descriptor/Access Byte
     #[derive(Clone, Copy, Ord, PartialOrd, Eq, PartialEq, Debug, Hash)]
     pub struct DescriptorAccess: u8 {
         /// This bit is set by the CPU when the CPU accesses the descriptor. If the descriptor
@@ -103,7 +108,7 @@ bitflags! {
 bitflags! {
     /// This structure represents the flags, that can be set on a descriptor.
     ///
-    /// Here is a list with the flags:
+    /// Here is a list of all flags with description:
     /// - [DescriptorFlags::GRANULARITY] - This flag indicates the scaling of the Limit value. If
     /// this flag is set, the limit is in 4 KiB blocks. If not, the Limit value is in 1 byte blocks.
     /// - [DescriptorFlags::SIZE] - If this flag is set, this is a 32-bit protected mode segment. If
@@ -141,14 +146,15 @@ bitflags! {
 #[repr(C, packed)]
 #[derive(Clone, Copy, Ord, PartialOrd, Eq, PartialEq, Debug, Hash, Default)]
 pub struct GDTDescriptor {
-    _ignored1: [u8; 5], // This section is ignored on x86_64 systems TODO: Implement for 32-bit compatibility
+    _ignored1: [u8; 5], /* This section is ignored on x86_64 systems TODO: Implement for 32-bit
+                         * compatibility */
     access: u8,
     flags: u8,
-    _ignored2: [u8; 2] // This section is ignored on x86_64 systems TODO: Implement for 32-bit compatibility
+    _ignored2: [u8; 2], /* This section is ignored on x86_64 systems TODO: Implement for 32-bit
+                         * compatibility */
 }
 
 impl GDTDescriptor {
-
     /// This function creates a new GDT descriptor with the specified values. The function parameters
     /// `privilege`, `kind` and `access` are merged to the access byte for the descriptor.
     ///
@@ -173,8 +179,11 @@ impl GDTDescriptor {
     /// - [GDT Tutorial](https://wiki.osdev.org/GDT_Tutorial) under `What to put in a GDT`
     #[inline]
     pub fn kernel_mode_code_segment() -> Self {
-        Self::new(PrivilegeLevel::Ring0, DescriptorAccess::PRESENT | DescriptorAccess::READABLE |
-            DescriptorAccess::EXECUTABLE, DescriptorFlags::GRANULARITY | DescriptorFlags::LONG_MODE)
+        Self::new(
+            PrivilegeLevel::Ring0,
+            DescriptorAccess::PRESENT | DescriptorAccess::READABLE | DescriptorAccess::EXECUTABLE,
+            DescriptorFlags::GRANULARITY | DescriptorFlags::LONG_MODE,
+        )
     }
 
     /// This function creates a new GDT descriptor with the default settings for a
@@ -184,8 +193,11 @@ impl GDTDescriptor {
     /// - [GDT Tutorial](https://wiki.osdev.org/GDT_Tutorial) under `What to put in a GDT`
     #[inline]
     pub fn kernel_mode_data_segment() -> Self {
-        Self::new(PrivilegeLevel::Ring0, DescriptorAccess::PRESENT |
-            DescriptorAccess::WRITABLE, DescriptorFlags::GRANULARITY | DescriptorFlags::LONG_MODE)
+        Self::new(
+            PrivilegeLevel::Ring0,
+            DescriptorAccess::PRESENT | DescriptorAccess::WRITABLE,
+            DescriptorFlags::GRANULARITY | DescriptorFlags::LONG_MODE,
+        )
     }
 
     /// This function creates a new GDT descriptor with the default settings for a
@@ -195,8 +207,11 @@ impl GDTDescriptor {
     /// - [GDT Tutorial](https://wiki.osdev.org/GDT_Tutorial) under `What to put in a GDT`
     #[inline]
     pub fn user_mode_code_segment() -> Self {
-        Self::new(PrivilegeLevel::Ring3, DescriptorAccess::PRESENT | DescriptorAccess::READABLE |
-            DescriptorAccess::EXECUTABLE, DescriptorFlags::GRANULARITY | DescriptorFlags::LONG_MODE)
+        Self::new(
+            PrivilegeLevel::Ring3,
+            DescriptorAccess::PRESENT | DescriptorAccess::READABLE | DescriptorAccess::EXECUTABLE,
+            DescriptorFlags::GRANULARITY | DescriptorFlags::LONG_MODE,
+        )
     }
 
     /// This function creates a new GDT descriptor with the default settings for a
@@ -206,17 +221,19 @@ impl GDTDescriptor {
     /// - [GDT Tutorial](https://wiki.osdev.org/GDT_Tutorial) under `What to put in a GDT`
     #[inline]
     pub fn user_mode_data_segment() -> Self {
-        Self::new(PrivilegeLevel::Ring3, DescriptorAccess::PRESENT | DescriptorAccess::WRITABLE,
-                  DescriptorFlags::GRANULARITY | DescriptorFlags::LONG_MODE)
+        Self::new(
+            PrivilegeLevel::Ring3,
+            DescriptorAccess::PRESENT | DescriptorAccess::WRITABLE,
+            DescriptorFlags::GRANULARITY | DescriptorFlags::LONG_MODE,
+        )
     }
-
 }
 
 #[repr(C, packed(2))]
 #[derive(Clone, Copy, Ord, PartialOrd, Eq, PartialEq, Debug, Hash)]
 pub struct GlobalDescriptorTablePointer {
     limit: u16,
-    base: u64
+    base: u64,
 }
 
 /// This structure represents the Global Descriptor Table with the maximum of 8192 entries. In this
@@ -228,15 +245,14 @@ pub struct GlobalDescriptorTablePointer {
 #[derive(Clone, Copy, Ord, PartialOrd, Eq, PartialEq, Debug, Hash)]
 pub struct GlobalDescriptorTable {
     descriptors: [GDTDescriptor; 8192],
-    count: usize
+    count: usize,
 }
 
 impl GlobalDescriptorTable {
-
     pub fn new() -> Self {
         Self {
             descriptors: [GDTDescriptor::default(); 8192],
-            count: 0
+            count: 0,
         }
     }
 
@@ -246,7 +262,6 @@ impl GlobalDescriptorTable {
         }
     }
 
-    #[inline]
     pub fn insert(&mut self, index: usize, descriptor: GDTDescriptor) {
         self.descriptors[index] = descriptor;
         if self.count < index {
@@ -257,8 +272,7 @@ impl GlobalDescriptorTable {
     pub fn as_ptr(&self) -> GlobalDescriptorTablePointer {
         GlobalDescriptorTablePointer {
             base: self.descriptors.as_ptr() as u64,
-            limit: (self.count * size_of::<GDTDescriptor>() - 1) as u16
+            limit: (self.count * size_of::<GDTDescriptor>() - 1) as u16,
         }
     }
-
 }

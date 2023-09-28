@@ -1,15 +1,31 @@
-use core::{mem, slice};
-use elf::{abi, ElfBytes};
-use elf::endian::AnyEndian;
-use log::{debug, info};
-use uefi::table::boot::{AllocateType, MemoryType};
-use uefi_services::system_table;
 use crate::error::Error;
+use core::{
+    mem,
+    slice,
+};
+use elf::{
+    abi,
+    endian::AnyEndian,
+    ElfBytes,
+};
+use log::{
+    debug,
+    info,
+};
+use uefi::table::boot::{
+    AllocateType,
+    MemoryType,
+};
+use uefi_services::system_table;
 
 pub fn parse_elf_file(file_buffer: &[u8]) -> Result<unsafe extern "cdecl" fn(i32) -> i32, Error> {
     let elf = ElfBytes::<AnyEndian>::minimal_parse(file_buffer)?;
-    info!("Successfully read {} kB from kernel file and parsed to ELF file\n", file_buffer.len() / 1000);
-    debug!("Imported {} program header(s) and {} section header(s)\n",
+    info!(
+        "Successfully read {} kB from kernel file and parsed to ELF file\n",
+        file_buffer.len() / 1000
+    );
+    debug!(
+        "Imported {} program header(s) and {} section header(s)\n",
         elf.segments().map(|table| table.len()).unwrap_or(0),
         elf.section_headers().map(|table| table.len()).unwrap_or(0)
     );
@@ -23,8 +39,10 @@ pub fn parse_elf_file(file_buffer: &[u8]) -> Result<unsafe extern "cdecl" fn(i32
                 continue;
             }
 
-            debug!("Found load segment at offset 0x{:X} (P: 0x{:2X} V: 0x{:2X})\n", segment.p_offset,
-                segment.p_paddr, segment.p_vaddr);
+            debug!(
+                "Found load segment at offset 0x{:X} (P: 0x{:2X} V: 0x{:2X})\n",
+                segment.p_offset, segment.p_paddr, segment.p_vaddr
+            );
 
             // Calculate count of pages
             let num_pages: usize = {
@@ -34,22 +52,32 @@ pub fn parse_elf_file(file_buffer: &[u8]) -> Result<unsafe extern "cdecl" fn(i32
             };
 
             // Allocate and zero page
-            let vaddr = boot_services.allocate_pages(
-                AllocateType::Address(segment.p_vaddr & !0x0FFF),
-                MemoryType::LOADER_CODE,
-                num_pages).map_err(|err| err.status())?;
+            let vaddr = boot_services
+                .allocate_pages(
+                    AllocateType::Address(segment.p_vaddr & !0x0FFF),
+                    MemoryType::LOADER_CODE,
+                    num_pages,
+                )
+                .map_err(|err| err.status())?;
             if vaddr != (segment.p_vaddr & !0x0FFF) {
-                panic!("Firmware didn't respected our requested address (0x{:X} to 0x{:X})", vaddr, (segment.p_vaddr & !0x0FFF));
+                panic!(
+                    "Firmware didn't respected our requested address (0x{:X} to 0x{:X})",
+                    vaddr,
+                    (segment.p_vaddr & !0x0FFF)
+                );
             }
 
             unsafe { boot_services.set_mem((segment.p_vaddr & !0x0FFF) as _, num_pages * 4096, 0) };
-            info!("Allocated {} pages ({} bytes) on 0x{:X} for KERNEL.ELF", num_pages,
-                segment.p_memsz, segment.p_vaddr);
+            info!(
+                "Allocated {} pages ({} bytes) on 0x{:X} for KERNEL.ELF",
+                num_pages, segment.p_memsz, segment.p_vaddr
+            );
 
             // Insert data into memory
             unsafe {
                 slice::from_raw_parts_mut(segment.p_vaddr as *mut u8, segment.p_memsz as usize)
-            }.copy_from_slice(elf.segment_data(&segment)?);
+            }
+            .copy_from_slice(elf.segment_data(&segment)?);
         }
     }
 

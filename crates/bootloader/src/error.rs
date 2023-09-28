@@ -1,7 +1,9 @@
 use elf::ParseError;
 use thiserror_no_std::Error;
-use uefi::data_types::FromStrError;
-use uefi::Status;
+use uefi::{
+    data_types::FromStrError,
+    Status,
+};
 
 #[derive(Error, Debug)]
 pub enum Error {
@@ -17,5 +19,5 @@ pub enum Error {
     #[error("The requested resource is not a file")]
     NotFile,
     #[error("{0}")]
-    ElfError(#[from] ParseError)
+    ElfError(#[from] ParseError),
 }

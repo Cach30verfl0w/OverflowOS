@@ -1,20 +1,35 @@
-use std::fs;
-use std::fs::File;
-use std::io::{Read, Write};
-use std::path::Path;
-use colorful::{Color, Colorful};
-use fatfs::{FatType, FileSystem, format_volume, FormatVolumeOptions, FsOptions};
+use crate::error::Error;
+use colorful::{
+    Color,
+    Colorful,
+};
+use fatfs::{
+    format_volume,
+    FatType,
+    FileSystem,
+    FormatVolumeOptions,
+    FsOptions,
+};
 use fscommon::BufStream;
 use log::debug;
-use crate::error::Error;
+use std::{
+    fs,
+    fs::File,
+    io::{
+        Read,
+        Write,
+    },
+    path::Path,
+};
 
 pub(crate) struct ImageGenerator {
-    file_system: FileSystem<BufStream<File>>
+    file_system: FileSystem<BufStream<File>>,
 }
 
 impl ImageGenerator {
-
-    pub(crate) fn new<F: AsRef<Path>>(file: F, block_size: u16, block_count: u32) -> Result<ImageGenerator, Error> {
+    pub(crate) fn new<F: AsRef<Path>>(
+        file: F, block_size: u16, block_count: u32,
+    ) -> Result<ImageGenerator, Error> {
         // Create zeroed file if exists
         if !file.as_ref().exists() {
             let mut file = File::create(&file)?;
@@ -25,15 +40,16 @@ impl ImageGenerator {
         // Format Volume
         let file = fs::OpenOptions::new().read(true).write(true).open(file)?;
         let mut file_buffer = BufStream::new(file);
-        format_volume(&mut file_buffer, FormatVolumeOptions::new()
-            .fat_type(FatType::Fat32)
-            .bytes_per_sector(block_size)
-            .total_sectors(block_count))?;
+        format_volume(
+            &mut file_buffer,
+            FormatVolumeOptions::new()
+                .fat_type(FatType::Fat32)
+                .bytes_per_sector(block_size)
+                .total_sectors(block_count),
+        )?;
 
         let file_system = FileSystem::new(file_buffer, FsOptions::new().update_accessed_date(true))?;
-        Ok(Self {
-            file_system
-        })
+        Ok(Self { file_system })
     }
 
     pub(crate) fn create_directory<DIR: AsRef<Path>>(&self, directory: DIR) -> Result<(), Error> {
@@ -51,9 +67,14 @@ impl ImageGenerator {
         Ok(())
     }
 
-    pub(crate) fn copy_into<HP: AsRef<Path>, IP: AsRef<Path>>(&self, host_file: HP, image_file: IP) -> Result<(), Error> {
-        debug!("Move {} as {} into image", host_file.as_ref().to_str().unwrap().gradient(Color::Cyan),
-            image_file.as_ref().to_str().unwrap().gradient(Color::Red));
+    pub(crate) fn copy_into<HP: AsRef<Path>, IP: AsRef<Path>>(
+        &self, host_file: HP, image_file: IP,
+    ) -> Result<(), Error> {
+        debug!(
+            "Move {} as {} into image",
+            host_file.as_ref().to_str().unwrap().gradient(Color::Cyan),
+            image_file.as_ref().to_str().unwrap().gradient(Color::Red)
+        );
 
         if image_file.as_ref().is_dir() {
             return Err(Error::InvalidParameter("image_file".to_owned()));
@@ -75,11 +96,12 @@ impl ImageGenerator {
             self.create_directory(parent)?;
         }
 
-        let mut file = self.file_system.root_dir()
+        let mut file = self
+            .file_system
+            .root_dir()
             .create_file(image_file.as_ref().to_str().unwrap())?;
         file.write_all(bytes.as_slice())?;
         file.flush()?;
         Ok(())
     }
-
 }
