@@ -4,7 +4,10 @@
 //! - [x86 Handling Exceptions](https://hackernoon.com/x86-handling-exceptions-lds3uxc)
 //! - [osdev Global Descriptor Table](https://wiki.osdev.org/Global_Descriptor_Table)
 
-use crate::x86::DescTablePointer;
+use crate::{
+    x86::DescTablePointer,
+    PrivilegeLevel,
+};
 use bitflags::{
     bitflags,
     Flags,
@@ -13,7 +16,6 @@ use core::{
     arch::asm,
     mem::size_of,
 };
-use crate::PrivilegeLevel;
 
 bitflags! {
     /// This structure represents most of the flags for the access byte in the descriptor.
@@ -131,57 +133,28 @@ impl GDTDescriptor {
         descriptor
     }
 
-    /// This function creates a new GDT descriptor with the default settings for a executable
-    /// Kernel-Mode Code segment
+    /// This function creates a new GDT descriptor with the default settings for a executable Code
+    /// segment
     ///
     /// # See also
     /// - [GDT Tutorial](https://wiki.osdev.org/GDT_Tutorial) under `What to put in a GDT`
     #[inline]
-    pub fn kernel_mode_code_segment() -> Self {
+    pub fn code_segment(level: PrivilegeLevel) -> Self {
         Self::new(
-            PrivilegeLevel::Ring0,
+            level,
             DescriptorAccess::PRESENT | DescriptorAccess::READABLE | DescriptorAccess::EXECUTABLE,
             DescriptorFlags::GRANULARITY | DescriptorFlags::LONG_MODE,
         )
     }
 
-    /// This function creates a new GDT descriptor with the default settings for a
-    /// Kernel-Mode Data segment
+    /// This function creates a new GDT descriptor with the default settings for a Data segment
     ///
     /// # See also
     /// - [GDT Tutorial](https://wiki.osdev.org/GDT_Tutorial) under `What to put in a GDT`
     #[inline]
-    pub fn kernel_mode_data_segment() -> Self {
+    pub fn data_segment(level: PrivilegeLevel) -> Self {
         Self::new(
-            PrivilegeLevel::Ring0,
-            DescriptorAccess::PRESENT | DescriptorAccess::WRITABLE,
-            DescriptorFlags::GRANULARITY | DescriptorFlags::LONG_MODE,
-        )
-    }
-
-    /// This function creates a new GDT descriptor with the default settings for a
-    /// User-Mode Code segment
-    ///
-    /// # See also
-    /// - [GDT Tutorial](https://wiki.osdev.org/GDT_Tutorial) under `What to put in a GDT`
-    #[inline]
-    pub fn user_mode_code_segment() -> Self {
-        Self::new(
-            PrivilegeLevel::Ring3,
-            DescriptorAccess::PRESENT | DescriptorAccess::READABLE | DescriptorAccess::EXECUTABLE,
-            DescriptorFlags::GRANULARITY | DescriptorFlags::LONG_MODE,
-        )
-    }
-
-    /// This function creates a new GDT descriptor with the default settings for a
-    /// User-Mode Data segment
-    ///
-    /// # See also
-    /// - [GDT Tutorial](https://wiki.osdev.org/GDT_Tutorial) under `What to put in a GDT`
-    #[inline]
-    pub fn user_mode_data_segment() -> Self {
-        Self::new(
-            PrivilegeLevel::Ring3,
+            level,
             DescriptorAccess::PRESENT | DescriptorAccess::WRITABLE,
             DescriptorFlags::GRANULARITY | DescriptorFlags::LONG_MODE,
         )

@@ -17,7 +17,11 @@ use alloc::{
     vec,
 };
 use libcpu::{
-    halt_cpu
+    gdt::{
+        DescriptorAccess,
+        PrivilegeLevel,
+    },
+    halt_cpu,
 };
 use log::{
     info,
@@ -37,7 +41,6 @@ use uefi::{
     Handle,
     Status,
 };
-use libcpu::gdt::{DescriptorAccess, PrivilegeLevel};
 
 #[entry]
 fn main(_image_handle: Handle, mut system_table: SystemTable<Boot>) -> Status {
@@ -78,7 +81,6 @@ fn main(_image_handle: Handle, mut system_table: SystemTable<Boot>) -> Status {
     file.read(file_buffer.as_mut_slice())
         .unwrap_or_else(|err| panic!("Unable to read Kernel as file: {}", err));
 
-
     // Parse as ELF file
     let function = parse_elf_file(file_buffer.as_slice())
         .unwrap_or_else(|err| panic!("Unable to load Kernel: {}", err));
@@ -92,8 +94,8 @@ fn main(_image_handle: Handle, mut system_table: SystemTable<Boot>) -> Status {
             GlobalDescriptorTable,
         };
         let mut global_descriptor_table = GlobalDescriptorTable::new();
-        global_descriptor_table.insert(1, GDTDescriptor::kernel_mode_code_segment());
-        global_descriptor_table.insert(2, GDTDescriptor::kernel_mode_data_segment());
+        global_descriptor_table.insert(1, GDTDescriptor::code_segment(PrivilegeLevel::Ring0));
+        global_descriptor_table.insert(2, GDTDescriptor::data_segment(PrivilegeLevel::Ring0));
         global_descriptor_table.load();
     }
 
