@@ -6,8 +6,8 @@ use uefi::prelude::BootServices;
 use uefi::proto::media::file::{Directory, File, FileAttribute, FileMode, RegularFile};
 use uefi::proto::media::fs::SimpleFileSystem;
 use uefi::table::boot::{ScopedProtocol, SearchType};
+use uefi_services::system_table;
 use crate::error::Error;
-use crate::SYSTEM_TABLE;
 
 pub(crate) struct SimpleFileSystemProvider<'a> {
     volume_handles: Vec<Handle>,
@@ -21,14 +21,14 @@ impl<'a> SimpleFileSystemProvider<'a> {
         let mut value = Self {
             volume_handles: Vec::new(),
             open_volumes: Vec::new(),
-            boot_services: unsafe { SYSTEM_TABLE.as_ref() }.unwrap().boot_services()
+            boot_services: unsafe { system_table().as_ref() }.boot_services()
         };
         value.reload()?;
         Ok(value)
     }
 
     pub(crate) fn reload(&mut self) -> Result<(), Error> {
-        let boot_services = unsafe { SYSTEM_TABLE.as_ref() }.unwrap().boot_services();
+        let boot_services = unsafe { system_table().as_ref() }.boot_services();
         let handle_buffer = boot_services.locate_handle_buffer(SearchType::ByProtocol(&SimpleFileSystem::GUID))
             .map_err(|err| err.status())?;
         self.volume_handles = handle_buffer.into_iter().map(|handle| *handle).collect();

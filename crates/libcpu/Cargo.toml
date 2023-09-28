@@ -12,3 +12,4 @@ edition.workspace = true
 
 [dependencies]
 bitflags = { version = "2.4.0" }
+x86_64 = "0.14.11"

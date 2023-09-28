@@ -3,10 +3,10 @@ use elf::{abi, ElfBytes};
 use elf::endian::AnyEndian;
 use log::{debug, info};
 use uefi::table::boot::{AllocateType, MemoryType};
+use uefi_services::system_table;
 use crate::error::Error;
-use crate::SYSTEM_TABLE;
 
-pub fn parse_elf_file(file_buffer: &[u8]) -> Result<(), Error> {
+pub fn parse_elf_file(file_buffer: &[u8]) -> Result<unsafe extern "cdecl" fn(i32) -> i32, Error> {
     let elf = ElfBytes::<AnyEndian>::minimal_parse(file_buffer)?;
     info!("Successfully read {} kB from kernel file and parsed to ELF file\n", file_buffer.len() / 1000);
     debug!("Imported {} program header(s) and {} section header(s)\n",
@@ -14,7 +14,7 @@ pub fn parse_elf_file(file_buffer: &[u8]) -> Result<(), Error> {
         elf.section_headers().map(|table| table.len()).unwrap_or(0)
     );
 
-    let boot_services = unsafe { SYSTEM_TABLE.as_mut() }.unwrap().boot_services();
+    let boot_services = unsafe { system_table().as_mut() }.boot_services();
 
     // Load segments into memory
     if let Some(segments) = elf.segments() {
@@ -43,7 +43,7 @@ pub fn parse_elf_file(file_buffer: &[u8]) -> Result<(), Error> {
             }
 
             unsafe { boot_services.set_mem((segment.p_vaddr & !0x0FFF) as _, num_pages * 4096, 0) };
-            info!("Allocated {} pages ({} bytes) on 0x{:X} for KERNEL.ELF\n", num_pages,
+            info!("Allocated {} pages ({} bytes) on 0x{:X} for KERNEL.ELF", num_pages,
                 segment.p_memsz, segment.p_vaddr);
 
             // Insert data into memory
@@ -54,7 +54,5 @@ pub fn parse_elf_file(file_buffer: &[u8]) -> Result<(), Error> {
     }
 
     // Locate kernel_entry function
-    let entry_point: unsafe extern "cdecl" fn(i32) -> i32 = unsafe { mem::transmute(elf.ehdr.e_entry) };
-    info!("A {}", unsafe { entry_point(12) });
-    Ok(())
+    Ok(unsafe { mem::transmute(elf.ehdr.e_entry) })
 }
