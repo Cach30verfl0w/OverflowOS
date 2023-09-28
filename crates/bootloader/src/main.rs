@@ -56,10 +56,7 @@ fn main(_image_handle: Handle, mut system_table: SystemTable<Boot>) -> Status {
     // Initialize Simple FileSystem
     let mut file_system = SimpleFileSystemProvider::new()
         .unwrap_or_else(|err| panic!("Unable to initialize FileSystem: {}", err));
-    info!(
-        "Successfully initialized File System with {} volume(s)",
-        file_system.found_volumes()
-    );
+    info!("Successfully initialized File System with {} volume(s)", file_system.found_volumes());
 
     // Open first volume and open kernel
     file_system

@@ -99,30 +99,14 @@ pub struct Arguments {
     #[arg(long, short)]
     level: Option<Level>,
 }
-
 fn main() {
     // Initialize header and print header
     simple_logger::init_with_env().unwrap();
-    info!(
-        "{}",
-        "   ____                  ______              ____  _____   ".gradient(Color::Blue)
-    );
-    info!(
-        "{}",
-        "  / __ \\_   _____  _____/ __/ /___ _      __/ __ \\/ ___/ ".gradient(Color::Blue)
-    );
-    info!(
-        "{}",
-        " / / / / | / / _ \\/ ___/ /_/ / __ \\ | /| / / / / /\\__ \\".gradient(Color::Blue)
-    );
-    info!(
-        "{}",
-        "/ /_/ /| |/ /  __/ /  / __/ / /_/ / |/ |/ / /_/ /___/ /    ".gradient(Color::Blue)
-    );
-    info!(
-        "{}",
-        "\\____/ |___/\\___/_/  /_/ /_/\\____/|__/|__/\\____//____/ ".gradient(Color::Blue)
-    );
+    info!("{}", "   ____                  ______              ____  _____   ".gradient(Color::Blue));
+    info!("{}", "  / __ \\_   _____  _____/ __/ /___ _      __/ __ \\/ ___/ ".gradient(Color::Blue));
+    info!("{}", " / / / / | / / _ \\/ ___/ /_/ / __ \\ | /| / / / / /\\__ \\".gradient(Color::Blue));
+    info!("{}", "/ /_/ /| |/ /  __/ /  / __/ / /_/ / |/ |/ / /_/ /___/ /    ".gradient(Color::Blue));
+    info!("{}", "\\____/ |___/\\___/_/  /_/ /_/\\____/|__/|__/\\____//____/ ".gradient(Color::Blue));
     info!(
         "     {}, written in {} with {}",
         "Operating System".gradient(Color::Blue),
@@ -174,10 +158,7 @@ fn main() {
 
         // Generate QEMU path and validate
         let qemu_executable = format!("qemu-system-{}", String::from(args.architecture));
-        debug!(
-            "Searching for '{}' in arguments or path",
-            qemu_executable.clone().color(Color::Red)
-        );
+        debug!("Searching for '{}' in arguments or path", qemu_executable.clone().color(Color::Red));
         let qemu_path = args
             .qemu_system_folder
             .map(|path| Path::new(&path).join(&qemu_executable))
