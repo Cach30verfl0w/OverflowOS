@@ -16,13 +16,7 @@ use alloc::{
     borrow::Cow,
     vec,
 };
-use libcpu::{
-    gdt::{
-        DescriptorAccess,
-        PrivilegeLevel,
-    },
-    halt_cpu,
-};
+use libcpu::{halt_cpu, PrivilegeLevel};
 use log::{
     info,
     LevelFilter,

@@ -8,7 +8,6 @@
 //! # See also
 //! - [Interrupt Descriptor Table](https://wiki.osdev.org/IDT) on [OSDev.org](https://osdev.org)
 
-use crate::gdt::PrivilegeLevel;
 use bitflags::{
     bitflags,
     Flags,
@@ -17,6 +16,7 @@ use core::{
     marker::PhantomData,
     mem,
 };
+use crate::PrivilegeLevel;
 
 bitflags! {
     /// This structure represents most of the flags for the access byte in the descriptor.
@@ -84,9 +84,9 @@ impl<F> InterruptDescriptor<F> {
             isr_lower_address: address & 0xFFFF,
             segment_selector,
             always0: 0,
-            flags: gate_type.bits() & access.bits() & (privilege_level as u8),
-            isr_mid_address: ((address >> 16) as u64 & 0xFFFF) as u16,
-            isr_higher_address: ((address >> 32) as u64 & 0xFFFF_FFFF) as u32,
+            flags: (gate_type as u8) & access.bits() & (privilege_level as u8),
+            isr_mid_address: ((address as u64 >> 16) & 0xFFFF) as u16,
+            isr_higher_address: ((address as u64 >> 32) & 0xFFFF_FFFF) as u32,
             reserved: 0,
             _phantom: Default::default(),
         }
