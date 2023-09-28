@@ -1,3 +1,5 @@
+#![feature(tuple_trait)]
+#![feature(unboxed_closures)]
 #![no_std]
 
 extern crate alloc;

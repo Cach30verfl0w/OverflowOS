@@ -8,10 +8,13 @@
 //! # See also
 //! - [Interrupt Descriptor Table](https://wiki.osdev.org/IDT) on [OSDev.org](https://osdev.org)
 
+use core::marker::PhantomData;
+use core::mem;
 use bitflags::{
     bitflags,
     Flags,
 };
+use crate::gdt::PrivilegeLevel;
 
 bitflags! {
     /// This structure represents most of the flags for the access byte in the descriptor.
@@ -52,29 +55,47 @@ pub enum GateType {
     Trap = 0b0000_1111,
 }
 
+// TODO: Implement High-level API for Exception and Interrupt Handling
+
 /// InterruptDescriptor represents an entry in the Interrupt Descriptor Table (IDT). It is used to
 /// define the handler for specific interrupts and exceptions while the code execution.
 #[repr(C, packed)]
-#[derive(Clone, Copy, Ord, PartialOrd, Eq, PartialEq, Debug, Hash)]
-pub struct InterruptDescriptor {
-    base_lo: u16,
+#[derive(Clone, Copy, Ord, PartialOrd, Eq, PartialEq, Debug, Hash, Default)]
+pub struct InterruptDescriptor<F> {
+    isr_lower_address: u16,
     segment_selector: u16,
     always0: u8,
     flags: u8,
-    base_hi: u16,
-    padding: [u8; 8],
+    #[cfg(target_arch = "x86_64")]
+    isr_mid_address: u16,
+    #[cfg(target_arch = "x86_64")]
+    isr_higher_address: u32,
+    #[cfg(not(target_arch = "x86_64"))]
+    isr_higher_address: u16,
+    #[cfg(target_arch = "x86_64")]
+    reserved: u32,
+    _phantom: PhantomData<F>
 }
 
-impl InterruptDescriptor {
-    pub fn new(offset: u64, segment_selector: u16, gate_type: GateType) -> Self {
+impl<F> InterruptDescriptor<F> {
+
+    pub fn new(privilege_level: PrivilegeLevel, handler: &F, access: DescriptorAccess,
+               segment_selector: u16, gate_type: GateType) -> Self {
+        let address = (unsafe { mem::transmute::<&F, *const F>(handler) }) as u16;
         Self {
-            // TODO: Implement PrivilegeLevel
-            base_lo: (offset & 0xFFFF) as u16,
+            isr_lower_address: address & 0xFFFF,
             segment_selector,
             always0: 0,
-            flags: (gate_type as u8) | DescriptorAccess::PRESENT.bits(),
-            base_hi: ((offset >> 16) & 0xFFFF) as u16,
-            padding: [0; 8],
+            flags: gate_type.bits() & access.bits() & (privilege_level as u8),
+            #[cfg(target_arch = "x86_64")]
+            isr_mid_address: ((address >> 16) as u64 & 0xFFFF) as u16,
+            #[cfg(target_arch = "x86_64")]
+            isr_higher_address: ((address >> 32) as u64 & 0xFFFF_FFFF) as u32,
+            #[cfg(not(target_arch = "x86_64"))]
+            isr_higher_address: (address >> 16) as u16,
+            reserved: 0,
+            _phantom: Default::default(),
         }
     }
+
 }
