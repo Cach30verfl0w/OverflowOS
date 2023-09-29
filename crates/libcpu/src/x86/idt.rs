@@ -17,10 +17,7 @@
 //! |     Reserved      |       Flags       |
 //! +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 //! |    Higher Handler Function Address    |
-//! +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//! |                                    Padding                                    |
-//! |                                                                               |
-//! +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//! +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 //! ```
 //!
 //! The following structure shows how a single descriptor is represented in the memory (x86_64):
@@ -129,8 +126,5 @@ pub struct IDTDescriptor {
     higher_isr_address: u32,
 
     #[cfg(target_arch = "x86_64")]
-    padding: [u8; 4],
-
-    #[cfg(not(target_arch = "x86_64"))]
-    padding: [u8; 8]
+    padding: [u8; 4]
 }
