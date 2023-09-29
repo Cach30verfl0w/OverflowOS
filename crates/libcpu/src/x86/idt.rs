@@ -560,4 +560,3 @@ pub struct IDTDescriptor {
     #[cfg(target_arch = "x86_64")]
     padding: [u8; 4]
 }
-

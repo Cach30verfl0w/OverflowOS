@@ -190,6 +190,8 @@ fn main() {
                 "-bios",
                 &args.ovmf_path,
                 "-cdrom",
+                "-cpu",
+                "max"
                 &args.iso_file,
                 "-m",
                 "512",

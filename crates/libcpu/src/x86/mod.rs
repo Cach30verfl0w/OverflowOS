@@ -22,6 +22,7 @@
 
 pub mod gdt;
 pub mod idt;
+pub mod cpuid;
 
 use core::arch::asm;
 use core::fmt::{Display, Formatter};

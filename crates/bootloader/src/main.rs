@@ -36,6 +36,7 @@ use uefi::{
     Handle,
     Status,
 };
+use libcpu::cpuid::get_cpu_features;
 use libcpu::gdt::{GDTDescriptor, GlobalDescriptorTable};
 
 #[entry]
@@ -76,6 +77,8 @@ fn main(_image_handle: Handle, mut system_table: SystemTable<Boot>) -> Status {
     let mut file_buffer = vec![0; file_size.file_size() as usize];
     file.read(file_buffer.as_mut_slice())
         .unwrap_or_else(|err| panic!("Unable to read Kernel as file: {}", err));
+
+    info!("{:?}", get_cpu_features());
 
     // Parse as ELF file
     let function = parse_elf_file(file_buffer.as_slice())
