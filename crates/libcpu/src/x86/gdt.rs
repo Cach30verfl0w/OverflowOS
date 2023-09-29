@@ -11,8 +11,8 @@ use core::arch::asm;
 use core::mem::size_of;
 use bit_field::BitField;
 use bitflags::bitflags;
-use crate::PrivilegeLevel;
-use crate::x86::DescriptorTablePointer;
+use crate::{MemoryAddress, PrivilegeLevel};
+use crate::x86::{DescriptorTablePointer};
 
 bitflags! {
     /// This structure represents most of the flags for the access byte in the descriptor.
@@ -98,6 +98,13 @@ bitflags! {
 /// [`GDTDescriptor::default`] to generate the Null descriptor. The implementation of the GDT is
 /// only needed for IA-32 and x86_64/x86 architectures.
 ///
+/// - `access` - This field contains the access flags. All needed access flags are specified in
+/// [Access]. This value is supported on 32-bit and 64-bit systems.
+/// - `flags` - This field contains the descriptor flags. All needed descriptor flags are specified
+/// in [Flags]. This value is supported on 32-bit and 64-bit systems.
+///
+/// TODO: Overwrite `_ignored1` and `_ignored2` with the data for 32-bit compatibility
+///
 /// # See also
 /// - [Global Descriptor Table](https://wiki.osdev.org/Global_Descriptor_Table#Segment_Descriptor)
 /// by [OSDev.org](https://wiki.osdev.org)
@@ -106,8 +113,9 @@ bitflags! {
 #[repr(C, packed)]
 #[derive(Clone, Copy, Ord, PartialOrd, Eq, PartialEq, Debug, Hash, Default)]
 pub struct GDTDescriptor {
-    _ignored1: [u8; 5], /* This section is ignored on x86_64 systems TODO: Implement for 32-bit
-                         * compatibility */
+    /// In these bytes are data stored, that is only used at 32-bit systems. Currently, this library
+    /// only supports 64-bit systems, so this value is not needed.
+    _ignored1: [u8; 5],
     
     /// This field contains the access flags. All needed access flags are specified in
     /// [Access]. This value is supported on 32-bit and 64-bit systems.
@@ -116,8 +124,10 @@ pub struct GDTDescriptor {
     /// This field contains the descriptor flags. All needed descriptor flags are specified in
     /// [Flags]. This value is supported on 32-bit and 64-bit systems.
     flags: u8,
-    _ignored2: [u8; 2], /* This section is ignored on x86_64 systems TODO: Implement for 32-bit
-                         * compatibility */
+
+    /// In these bytes are data stored, that is only used at 32-bit systems. Currently, this library
+    /// only supports 64-bit systems, so this value is not needed.
+    _ignored2: [u8; 2],
 }
 
 impl GDTDescriptor {
@@ -215,13 +225,22 @@ impl GDTDescriptor {
 /// This structure represents the Global Descriptor Table with the maximum of 8192 entries. In this
 /// structure, we store the descriptors in a slice.
 ///
+/// - `descriptors` - This field is a slice that can store 8192 [GDTDescriptor]s
+/// - `count` This field holds the max index that is used to insert a descriptor for the
+/// [DescriptorTablePointer]
+///
 /// # See also
 /// - [Global Descriptor Table](https://wiki.osdev.org/Global_Descriptor_Table)
 /// by [OSDev.org](https://wiki.osdev.org)
 /// - [GDT Tutorial](https://wiki.osdev.org/GDT_Tutorial) by [OSDev.org](https://wiki.osdev.org)
+/// - [GDTDescriptor] (Source Code)
 #[derive(Clone, Copy, Ord, PartialOrd, Eq, PartialEq, Debug, Hash)]
 pub struct GlobalDescriptorTable {
+    /// This field is a slice that can store 8192 [GDTDescriptor]
     descriptors: [GDTDescriptor; 8192],
+
+    /// This field holds the max index that is used to insert a descriptor for the
+    /// [DescriptorTablePointer]
     count: usize,
 }
 
@@ -236,12 +255,20 @@ impl Default for GlobalDescriptorTable {
 }
 
 impl GlobalDescriptorTable {
+    /// This function generates a pointer to the GDT with the [GlobalDescriptorTable::as_ptr]
+    /// function and loads it with the `lgdt` instruction.
+    ///
+    /// # See also
+    /// - [LGDT/LIDT](https://www.felixcloutier.com/x86/lgdt:lidt) by
+    /// [Felix Clountier](https://www.felixcloutier.com)
     pub fn load(&self) {
         unsafe {
             asm!("lgdt [{}]", in(reg) &self.as_ptr(), options(readonly, nostack, preserves_flags));
         }
     }
 
+    /// This function inserts a [GDTDescriptor] at the specified index in the GDT. After the
+    /// insertion, the function updates the count variable if necessary.
     pub fn insert(&mut self, index: usize, descriptor: GDTDescriptor) {
         self.descriptors[index] = descriptor;
         if self.count < index {
@@ -249,11 +276,17 @@ impl GlobalDescriptorTable {
         }
     }
 
+    /// This function generates a pointer to the Global Descriptor Table (GDT) with the base address
+    /// and the size of the GDT as limit.
+    ///
+    /// # See also
+    /// - [Global Descriptor Table](https://wiki.osdev.org/Global_Descriptor_Table#GDTR) by
+    /// [OSDev.org](https://wiki.osdev.org)
     #[must_use]
-    fn as_ptr(&self) -> DescriptorTablePointer {
+    pub fn as_ptr(&self) -> DescriptorTablePointer {
         DescriptorTablePointer {
-            base: self.descriptors.as_ptr() as u64,
-            limit: (self.count * size_of::<GDTDescriptor>() - 1) as u16,
+            base: self.descriptors.as_ptr() as MemoryAddress,
+            size: (self.count * size_of::<GDTDescriptor>() - 1) as u16,
         }
     }
 }

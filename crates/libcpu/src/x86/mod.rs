@@ -10,6 +10,7 @@ pub mod gdt;
 use core::arch::asm;
 use core::fmt::{Display, Formatter};
 use bit_field::BitField;
+use crate::MemoryAddress;
 
 /// This structure represents the privilege level for the descriptor. x86 and x86_64 CPUs are
 /// providing a few rings, but only 2 are used in Production-ready operating systems.
@@ -253,11 +254,40 @@ impl SegmentSelector {
 
 }
 
+/// This structure represents the pointer structure to a descriptor table like the GDT or IDT. These
+/// pointers are used in the `lidt` and `lgdt` instruction.
+///
+/// - `base` - This field represents the linear base address (not the physical address) to the table
+/// (size is depending on the target processor architecture)
+/// - `size` - This field represents the size of the table in bytes. (subtracted by 1)
+///
+/// # See also
+/// - [Global Descriptor Table](https://wiki.osdev.org/Global_Descriptor_Table#GDTR) by
+/// [OSDev.org](https://wiki.osdev.org)
+/// - [Interrupt Descriptor Table](https://wiki.osdev.org/Interrupt_Descriptor_Table#IDTR) by
+/// [OSDev.org](https://wiki.osdev.org)
+/// - [gdt::GlobalDescriptorTable::as_ptr()] (Source Code)
 #[repr(C, packed)]
 #[derive(Clone, Copy, Ord, PartialOrd, Eq, PartialEq, Debug, Hash)]
-struct DescriptorTablePointer {
-    limit: u16,
-    base: u64,
+pub struct DescriptorTablePointer {
+    ///  This field represents the linear base address (not the physical address) to the table
+    /// (size is depending on the target processor architecture)
+    ///
+    /// # See also
+    /// - [Global Descriptor Table](https://wiki.osdev.org/Global_Descriptor_Table#GDTR) by
+    /// [OSDev.org](https://wiki.osdev.org)
+    /// - [Interrupt Descriptor Table](https://wiki.osdev.org/Interrupt_Descriptor_Table#IDTR) by
+    /// [OSDev.org](https://wiki.osdev.org)
+    pub base: MemoryAddress,
+
+    /// This field represents the size of the table in bytes. (subtracted by 1)
+    ///
+    /// # See also
+    /// - [Global Descriptor Table](https://wiki.osdev.org/Global_Descriptor_Table#GDTR) by
+    /// [OSDev.org](https://wiki.osdev.org)
+    /// - [Interrupt Descriptor Table](https://wiki.osdev.org/Interrupt_Descriptor_Table#IDTR) by
+    /// [OSDev.org](https://wiki.osdev.org)
+    pub size: u16
 }
 
 /// This function implements the halt (`hlt`) instruction as a platform-independent function. The
