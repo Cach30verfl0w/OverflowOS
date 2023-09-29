@@ -3,8 +3,9 @@
 //! interrupts are triggered by the CPU itself or though `INT` instructions.
 //!
 //! A single IDT descriptor contains address of the handler function, the [SegmentSelector]
-//! and the descriptor's flag. The following structure shows how a single descriptor is represented
-//! in the memory:
+//! and the descriptor's flag.
+//!
+//! The following structure shows how a single descriptor is represented in the memory (x86):
 //! ```text
 //! 0                   1                   2                   3                   4
 //! 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
@@ -19,6 +20,25 @@
 //! +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 //! |                                    Padding                                    |
 //! |                                                                               |
+//! +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//! ```
+//!
+//! The following structure shows how a single descriptor is represented in the memory (x86_64):
+//! ```text
+//! 0                   1                   2                   3                   4
+//! 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+//! +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//! |     Lower Handler Function Address    |
+//! +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//! |            Segment Selector           |
+//! +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//! |     Reserved      |       Flags       |
+//! +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//! |    Middle Handler Function Address    |
+//! +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//! |                         Higher Handler Function Address                       |
+//! +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//! |                                Reserved bytes                                 |
 //! +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 //! ```
 //!
@@ -42,6 +62,29 @@
 
 use crate::SegmentSelector;
 
+/// This enum describes the types of gates that interrupt descriptors are able to represent. I don't
+/// included the Task Gate, because that Gate can lead into a GP exception or is poorly optimized or
+/// entirely removed. ([Resource](https://wiki.osdev.org/Interrupt_Descriptor_Table#Task_Gate))
+///
+/// - [GateType::Interrupt] - Interrupt gates are used to specify an ISR. Interrupt gates are
+/// automatically deactivating interrupts and reactivating them upon a `iret`.
+/// - [GateType::Trap] - Trap gates are used to handle exception. Gate types are not automatically
+/// deactivating and reactivating interrupts.
+///
+/// # See also
+/// - [Interrupt Service Routines](https://wiki.osdev.org/Interrupt_Service_Routines) by
+/// [OSDev.org](https://wiki.osdev.org/)
+#[repr(u8)]
+pub enum GateType {
+    /// Interrupt gates are used to specify an ISR. Interrupt gates are automatically deactivating
+    /// interrupts and reactivating them upon a `iret`.
+    Interrupt = 0xE,
+
+    /// Trap gates are used to handle exception. Gate types are not automatically deactivating and
+    /// reactivating interrupts.
+    Trap = 0xF
+}
+
 /// This structure implements a single descriptor in the IDT (Interrupt Descriptor Table). This
 /// structure is compatible with the raw memory representation of a descriptor. The implementation
 /// of the IDT is only needed for IA-32 and x86_64 architectures.
@@ -61,7 +104,7 @@ use crate::SegmentSelector;
 #[repr(C, packed)]
 #[derive(Clone, Copy, Ord, PartialOrd, Eq, PartialEq, Debug, Hash, Default)]
 pub struct IDTDescriptor {
-    /// This field represents the first 16 bits of the ISR function
+    /// This field represents the first 16 bits of the ISR function address
     lower_isr_address: u16,
 
     /// This field represents the segment selector which must point to a valid
@@ -74,8 +117,20 @@ pub struct IDTDescriptor {
     /// This field represents the flags of the descriptor
     flags: u8,
 
+    #[cfg(target_arch = "x86")]
     /// This field represents the last 16 bits of the ISR function
     higher_isr_address: u16,
+
     #[cfg(target_arch = "x86_64")]
+    /// This field represents the middle 16 bits of the ISR function address
+    middle_isr_address: u16,
+
+    /// This field represents the last 32 bits of the ISR function address
+    higher_isr_address: u32,
+
+    #[cfg(target_arch = "x86_64")]
+    padding: [u8; 4],
+
+    #[cfg(not(target_arch = "x86_64"))]
     padding: [u8; 8]
 }
