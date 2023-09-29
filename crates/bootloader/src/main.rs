@@ -17,7 +17,7 @@ use alloc::{
     borrow::Cow,
     vec,
 };
-use libcpu::halt_cpu;
+use libcpu::{halt_cpu, PrivilegeLevel};
 use log::{
     info,
     LevelFilter,
@@ -36,6 +36,7 @@ use uefi::{
     Handle,
     Status,
 };
+use libcpu::gdt::{GDTDescriptor, GlobalDescriptorTable};
 
 #[entry]
 fn main(_image_handle: Handle, mut system_table: SystemTable<Boot>) -> Status {
@@ -80,6 +81,11 @@ fn main(_image_handle: Handle, mut system_table: SystemTable<Boot>) -> Status {
     let function = parse_elf_file(file_buffer.as_slice())
         .unwrap_or_else(|err| panic!("Unable to load Kernel: {}", err));
     let (runtime_services, memory_map) = system_table.exit_boot_services();
+
+    let mut global_descriptor_table = GlobalDescriptorTable::default();
+    global_descriptor_table.insert(1, GDTDescriptor::code_segment(PrivilegeLevel::KernelSpace));
+    global_descriptor_table.insert(2, GDTDescriptor::data_segment(PrivilegeLevel::KernelSpace));
+    global_descriptor_table.load();
 
     halt_cpu();
 }

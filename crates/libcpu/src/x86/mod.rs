@@ -42,7 +42,7 @@ pub enum PrivilegeLevel {
     ///
     /// # See also
     /// - [Ring 0](https://wiki.osdev.org/Security#Ring_0) by [OSDev.org](https://wiki.osdev.org/)
-    Ring0 = 0b0000_0000,
+    KernelSpace = 0b0000_0000,
 
     /// This is a ring for device drivers. It offers more protection, but not the level of
     /// protection as Ring 3. (This ring is not used by almost all operating systems)
@@ -66,7 +66,7 @@ pub enum PrivilegeLevel {
     ///
     /// # See also
     /// - [Ring 3](https://wiki.osdev.org/Security#Ring_3) by [OSDev.org](https://wiki.osdev.org/)
-    Ring3 = 0b0110_0000,
+    UserSpace = 0b0110_0000,
 }
 
 /// This code just implements the Display trait into the privilege level over the Debug trait.
@@ -82,10 +82,10 @@ impl From<u16> for PrivilegeLevel {
     #[must_use]
     fn from(value: u16) -> Self {
         match value {
-            0x0 => Self::Ring0,
+            0x0 => Self::KernelSpace,
             0x1 => Self::Ring1,
             0x2 => Self::Ring2,
-            0x4 => Self::Ring3,
+            0x4 => Self::UserSpace,
             _ => panic!("Invalid privilege level {}", value)
         }
     }
