@@ -1,6 +1,32 @@
 //! This module implements the x86/x86_64 specific functionality as a Rust "Wrapper" of the Global
 //! Descriptor Table (GDT). The GDT is used to configure memory segments.
 //!
+//! A single GDT descriptor contains the segment start as a linear address (only used on 32-bit
+//! systems), a limit which tells the maximum addressable unit, the access flags for the segment
+//! and the flags for the segment. The following structure shows how a single descriptor is
+//! represented in the memory (ML = Middle Limit, DF = Descriptor Flags):
+//! ```text
+//! 0                   1                   2                   3                   4
+//! 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+//! +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//! |              Lower Limit              |          Segment Base Address         |
+//! +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//! |    Middle Base    |   Access Flags    | ML  | DF  |  Higher Base  |
+//! +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//! ```
+//! The limit values and base address values are only for 32-bit systems. As said before, these
+//! values are ignored in the 64-bit mode. Each selector covers the entire linear address space.
+//!
+//! # Examples
+//! The following examples shows the creation of a basic GDT for a Ring 0 only system.
+//! ```rust
+//! use libcpu::gdt::{GDTDescriptor, GlobalDescriptorTable};
+//! use libcpu::PrivilegeLevel;
+//! let mut global_descriptor_table = GlobalDescriptorTable::default();
+//! global_descriptor_table.insert(1, GDTDescriptor::code_segment(PrivilegeLevel::KernelSpace));
+//! global_descriptor_table.insert(2, GDTDescriptor::data_segment(PrivilegeLevel::KernelSpace));
+//! ```
+//!
 //! # See also
 //! - [x86 Handling Exceptions](https://hackernoon.com/x86-handling-exceptions-lds3uxc)
 //! by [HackerNoon.com](https://hackernoon.com)

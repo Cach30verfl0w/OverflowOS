@@ -1,11 +1,27 @@
 //! This module implements the function for the interaction with the hardware under x86_64 and x86
 //! processors. Here are general features like [wait_for_interrupts] and specific features like the
-//! Global Descriptor Table or the Local Descriptor Table implemented.
+//! Global Descriptor Table or the Local Descriptor Table implemented. The first descriptor in this
+//! table has to be filled with zeros. By default, the [gdt::GlobalDescriptorTable::default] is
+//! filling the table storage with zeros, so you can skip setting the first descriptor.
+//!
+//! # Example
+//! The following code example creates an empty descriptor table, generates a descriptor for a kernel
+//! level code and data segment. Then we tell the CPU to load that.
+//! ```rust
+//! use libcpu::gdt::{GDTDescriptor, GlobalDescriptorTable};
+//! use libcpu::PrivilegeLevel;
+//!
+//! let mut global_descriptor_table = GlobalDescriptorTable::default();
+//! global_descriptor_table.insert(1, GDTDescriptor::code_segment(PrivilegeLevel::KernelSpace));
+//! global_descriptor_table.insert(2, GDTDescriptor::data_segment(PrivilegeLevel::KernelSpace));
+//! global_descriptor_table.load();
+//! ```
 //!
 //! # See also
 //! [x86_64](https://wiki.osdev.org/X86-64) by [OSDev](https://wiki.osdev.org)
 
 pub mod gdt;
+pub mod idt;
 
 use core::arch::asm;
 use core::fmt::{Display, Formatter};
@@ -16,17 +32,17 @@ use crate::MemoryAddress;
 /// providing a few rings, but only 2 are used in Production-ready operating systems.
 ///
 /// Here is a short explanation of all privilege levels:
-/// - [PrivilegeLevel::Ring0] - This is the ring for the Kernel mode. Least protection and maximal
-/// access to hardware resources. A bootloader or kernel uses that mode.
+/// - [PrivilegeLevel::KernelSpace] - This is the ring for the Kernel mode. Least protection and
+/// maximal access to hardware resources. A bootloader or kernel uses that mode.
 /// - [PrivilegeLevel::Ring1] - This is a ring for device drivers. It offers more protection, but
 /// not the level of protection as Ring 3. (This ring is not used by almost all operating systems)
 /// - [PrivilegeLevel::Ring2] - This is a ring for device drivers. It offers more protection, but
 /// not the level of protection as Ring 3. It's the same like Ring 2. (This ring is not used by
 /// almost all operating systems)
-/// - [PrivilegeLevel::Ring3] - This is the Userspace/Userland ring. This ring ist used by the most
-/// operating systems for running applications. This ring grant the least privileges but the highest
-/// protection by the hardware. The communication with the hardware resources is handled over the
-/// kernel with System Calls.
+/// - [PrivilegeLevel::UserSpace] - This is the Userspace/Userland ring. This ring ist used by the
+/// most operating systems for running applications. This ring grant the least privileges but the
+/// highest protection by the hardware. The communication with the hardware resources is handled
+/// over the kernel with System Calls.
 ///
 /// # See also
 /// - [CPU Security Rings](https://wiki.osdev.org/Security#Rings) by [OSDev.org](https://wiki.osdev.org/)
