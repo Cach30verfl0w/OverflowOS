@@ -122,7 +122,7 @@ bitflags! {
 /// This structure represents a single descriptor in the GDT (Global Descriptor Table). This
 /// structure is compatible with the raw memory representation of a descriptor. Use the function
 /// [`GDTDescriptor::default`] to generate the Null descriptor. The implementation of the GDT is
-/// only needed for IA-32 and x86_64/x86 architectures.
+/// only needed for IA-32 and x86_64 architectures.
 ///
 /// - `access` - This field contains the access flags. All needed access flags are specified in
 /// [Access]. This value is supported on 32-bit and 64-bit systems.

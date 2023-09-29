@@ -13,14 +13,6 @@ type MemoryAddress = u64;
 /// This type represents an address to a memory block on 32-bit architecture systems
 type MemoryAddress = u32;
 
-#[cfg(target_pointer_width = "64")]
-/// This type represents an address of a CPU register in 64-bit architecture systems
-type ProcessorRegister = u64;
-
-#[cfg(target_pointer_width = "32")]
-/// This type represents the content of a CPU register on 32-bit architecture systems
-type ProcessorRegister = u32;
-
 #[cfg(any(target_arch = "x86_64", target_arch = "x86_64"))]
 mod x86;
 
