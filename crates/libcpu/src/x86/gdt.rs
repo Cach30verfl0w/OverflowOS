@@ -1,45 +1,42 @@
 //! This module implements the x86/x86_64 specific functionality as a Rust "Wrapper" of the Global
-//! Descriptor Table (GDT). The GDT is used to configure memory areas.
+//! Descriptor Table (GDT). The GDT is used to configure memory segments.
+//!
 //! # See also
 //! - [x86 Handling Exceptions](https://hackernoon.com/x86-handling-exceptions-lds3uxc)
-//! - [osdev Global Descriptor Table](https://wiki.osdev.org/Global_Descriptor_Table)
+//! by [HackerNoon.com](https://hackernoon.com)
+//! - [Global Descriptor Table](https://wiki.osdev.org/Global_Descriptor_Table)
+//! by [OSDev.org](https://wiki.osdev.org)
 
-use crate::{
-    x86::DescTablePointer,
-    PrivilegeLevel,
-};
-use bitflags::{
-    bitflags,
-    Flags,
-};
-use core::{
-    arch::asm,
-    mem::size_of,
-};
+use core::arch::asm;
+use core::mem::size_of;
+use bit_field::BitField;
+use bitflags::bitflags;
+use crate::PrivilegeLevel;
+use crate::x86::DescriptorTablePointer;
 
 bitflags! {
     /// This structure represents most of the flags for the access byte in the descriptor.
     ///
     /// Here is a list of all flags with description:
-    /// - [DescriptorAccess::ACCESSED] - This bit is set by the CPU when the CPU accesses the
+    /// - [Access::ACCESSED] - This bit is set by the CPU when the CPU accesses the
     /// descriptor. If the descriptor is stored in read only pages and this bit is set to 0, the
     /// CPU will trigger a page fault. You should set this bit.
-    /// - [DescriptorAccess::PRESENT] - This bit must be always set to communicate the CPU, that
+    /// - [Access::PRESENT] - This bit must be always set to communicate the CPU, that
     /// this segment is valid.
-    /// - [DescriptorAccess::USER_SEGMENT] - If set, the segment is a code or data segment. If not,
+    /// - [Access::USER_SEGMENT] - If set, the segment is a code or data segment. If not,
     /// this segment is a data segment (a.e. a Task State Segment). This flag
-    /// - [DescriptorAccess::EXECUTABLE] - If defined, the segment is a executable code segment. If
+    /// - [Access::EXECUTABLE] - If defined, the segment is a executable code segment. If
     /// not, this segment is a data segment
-    /// - [DescriptorAccess::READABLE] - This bit is only for code segments. If set, read access to
+    /// - [Access::READABLE] - This bit is only for code segments. If set, read access to
     /// the code segment is allowed. Write access is never allowed for these segments.
-    /// - [DescriptorAccess::WRITABLE] - This bit is only for data segments. If set, write access to
+    /// - [Access::WRITABLE] - This bit is only for data segments. If set, write access to
     /// the data segment is allowed. Read access is always allowed for these segments.
     ///
     /// # See also
-    /// - [Global Descriptor Table](https://wiki.osdev.org/Global_Descriptor_Table) under
-    /// Segment Descriptor/Access Byte
+    /// - [Global Descriptor Table](https://wiki.osdev.org/Global_Descriptor_Table#Segment_Descriptor)
+    /// by [OSDev.org](https://wiki.osdev.org)
     #[derive(Clone, Copy, Ord, PartialOrd, Eq, PartialEq, Debug, Hash)]
-    pub struct DescriptorAccess: u8 {
+    pub struct Access: u8 {
         /// This bit is set by the CPU when the CPU accesses the descriptor. If the descriptor
         /// is stored in read only pages and this bit is set to 0, the CPU will trigger a page
         /// fault. You should set this bit.
@@ -70,18 +67,18 @@ bitflags! {
     /// This structure represents the flags, that can be set on a descriptor.
     ///
     /// Here is a list of all flags with description:
-    /// - [DescriptorFlags::GRANULARITY] - This flag indicates the scaling of the Limit value. If
+    /// - [Flags::GRANULARITY] - This flag indicates the scaling of the Limit value. If
     /// this flag is set, the limit is in 4 KiB blocks. If not, the Limit value is in 1 byte blocks.
-    /// - [DescriptorFlags::SIZE] - If this flag is set, this is a 32-bit protected mode segment. If
+    /// - [Flags::SIZE] - If this flag is set, this is a 32-bit protected mode segment. If
     /// not set, this is a 16-bit protected mode segment.
-    /// - [DescriptorFlags::LONG_MODE] - If this flag iet set, this is a 64-bit code segment. If
+    /// - [Flags::LONG_MODE] - If this flag iet set, this is a 64-bit code segment. If
     /// this is set, you shouldn't set the size flag.
     ///
     /// # See also
-    /// - [Global Descriptor Table](https://wiki.osdev.org/Global_Descriptor_Table) under Segment
-    /// Descriptor/DescriptorAccess Byte
+    /// - [Global Descriptor Table](https://wiki.osdev.org/Global_Descriptor_Table#Segment_Descriptor)
+    /// by [OSDev.org](https://wiki.osdev.org)
     #[derive(Clone, Copy, Ord, PartialOrd, Eq, PartialEq, Debug, Hash)]
-    pub struct DescriptorFlags: u8 {
+    pub struct Flags: u8 {
         /// This flag indicates the scaling of the Limit value. If this flag is set, the limit
         /// is in 4 KiB blocks. If not, the Limit value is in 1 byte blocks.
         const GRANULARITY = 0b1000;
@@ -102,14 +99,22 @@ bitflags! {
 /// only needed for IA-32 and x86_64/x86 architectures.
 ///
 /// # See also
-/// - [Global Descriptor Table](https://wiki.osdev.org/Global_Descriptor_Table) under Segment
-/// Descriptor
+/// - [Global Descriptor Table](https://wiki.osdev.org/Global_Descriptor_Table#Segment_Descriptor)
+/// by [OSDev.org](https://wiki.osdev.org)
+/// - [x86 Handling Exceptions](https://hackernoon.com/x86-handling-exceptions-lds3uxc) by
+/// [HackerNoon.com](https://hackernoon.com)
 #[repr(C, packed)]
 #[derive(Clone, Copy, Ord, PartialOrd, Eq, PartialEq, Debug, Hash, Default)]
 pub struct GDTDescriptor {
     _ignored1: [u8; 5], /* This section is ignored on x86_64 systems TODO: Implement for 32-bit
                          * compatibility */
+    
+    /// This field contains the access flags. All needed access flags are specified in
+    /// [Access]. This value is supported on 32-bit and 64-bit systems.
     access: u8,
+
+    /// This field contains the descriptor flags. All needed descriptor flags are specified in
+    /// [Flags]. This value is supported on 32-bit and 64-bit systems.
     flags: u8,
     _ignored2: [u8; 2], /* This section is ignored on x86_64 systems TODO: Implement for 32-bit
                          * compatibility */
@@ -125,8 +130,10 @@ impl GDTDescriptor {
     /// - `flag` - This parameter defines the flags of the descriptor
     ///
     /// # See also
-    /// - [GDT Tutorial](https://wiki.osdev.org/GDT_Tutorial) under `What to put in a GDT`
-    pub fn new(privilege: PrivilegeLevel, access: DescriptorAccess, flags: DescriptorFlags) -> Self {
+    /// - [GDT Tutorial](https://wiki.osdev.org/GDT_Tutorial#What_to_Put_In_a_GDT)
+    /// by [OSDev.org](https://wiki.osdev.org)
+    #[must_use]
+    pub fn new(privilege: PrivilegeLevel, access: Access, flags: Flags) -> Self {
         let mut descriptor = GDTDescriptor::default();
         descriptor.access = access.bits() | (privilege as u8);
         descriptor.flags = flags.bits();
@@ -137,28 +144,72 @@ impl GDTDescriptor {
     /// segment
     ///
     /// # See also
-    /// - [GDT Tutorial](https://wiki.osdev.org/GDT_Tutorial) under `What to put in a GDT`
+    /// - [GDT Tutorial](https://wiki.osdev.org/GDT_Tutorial#What_to_Put_In_a_GDT)
+    /// by [OSDev.org](https://wiki.osdev.org)
     #[inline]
+    #[must_use]
     pub fn code_segment(level: PrivilegeLevel) -> Self {
         Self::new(
             level,
-            DescriptorAccess::PRESENT | DescriptorAccess::READABLE | DescriptorAccess::EXECUTABLE,
-            DescriptorFlags::GRANULARITY | DescriptorFlags::LONG_MODE,
+            Access::PRESENT | Access::READABLE | Access::EXECUTABLE,
+            Flags::GRANULARITY | Flags::LONG_MODE,
         )
     }
 
     /// This function creates a new GDT descriptor with the default settings for a Data segment
     ///
     /// # See also
-    /// - [GDT Tutorial](https://wiki.osdev.org/GDT_Tutorial) under `What to put in a GDT`
+    /// - [GDT Tutorial](https://wiki.osdev.org/GDT_Tutorial#What_to_Put_In_a_GDT)
+    /// by [OSDev.org](https://wiki.osdev.org)
     #[inline]
+    #[must_use]
     pub fn data_segment(level: PrivilegeLevel) -> Self {
         Self::new(
             level,
-            DescriptorAccess::PRESENT | DescriptorAccess::WRITABLE,
-            DescriptorFlags::GRANULARITY | DescriptorFlags::LONG_MODE,
+            Access::PRESENT | Access::WRITABLE,
+            Flags::GRANULARITY | Flags::LONG_MODE,
         )
     }
+
+    /// This function returns the descriptor's privilege level, set by the descriptor creator.
+    ///
+    /// # See also
+    /// - [CPU Security Rings](https://wiki.osdev.org/Security#Rings) by [OSDev.org](https://wiki.osdev.org/)
+    /// - [Global Descriptor Table](https://wiki.osdev.org/Global_Descriptor_Table#Segment_Descriptor)
+    /// by [OSDev.org](https://wiki.osdev.org/)
+    /// - [Protection Ring](https://en.wikipedia.org/wiki/Protection_ring) by
+    /// [Wikipedia](https://wikipedia.org)
+    /// - [PrivilegeLevel] (Source Code)
+    #[inline]
+    #[must_use]
+    pub fn privilege_level(&self) -> PrivilegeLevel {
+        PrivilegeLevel::from(self.access.get_bits(5..7) as u16)
+    }
+
+    /// This function returns the descriptor's access flags, set by the descriptor creator.
+    ///
+    /// # See also
+    /// - [Global Descriptor Table](https://wiki.osdev.org/Global_Descriptor_Table#Segment_Descriptor)
+    /// by [OSDev.org](https://wiki.osdev.org)
+    /// - [Access] (Source Code)
+    #[inline]
+    #[must_use]
+    pub fn access_flags(&self) -> Access {
+        Access::from_bits_retain(self.access)
+    }
+
+    /// This function returns the descriptor's flags, set by the descriptor creator.
+    ///
+    /// # See also
+    /// - [Global Descriptor Table](https://wiki.osdev.org/Global_Descriptor_Table#Segment_Descriptor)
+    /// by [OSDev.org](https://wiki.osdev.org)
+    /// - [Flags] (Source Code)
+    #[inline]
+    #[must_use]
+    pub fn flags(&self) -> Flags {
+        Flags::from_bits_retain(self.flags)
+    }
+
 }
 
 /// This structure represents the Global Descriptor Table with the maximum of 8192 entries. In this
@@ -166,21 +217,25 @@ impl GDTDescriptor {
 ///
 /// # See also
 /// - [Global Descriptor Table](https://wiki.osdev.org/Global_Descriptor_Table)
-/// - [GDT Tutorial](https://wiki.osdev.org/GDT_Tutorial)
+/// by [OSDev.org](https://wiki.osdev.org)
+/// - [GDT Tutorial](https://wiki.osdev.org/GDT_Tutorial) by [OSDev.org](https://wiki.osdev.org)
 #[derive(Clone, Copy, Ord, PartialOrd, Eq, PartialEq, Debug, Hash)]
 pub struct GlobalDescriptorTable {
     descriptors: [GDTDescriptor; 8192],
     count: usize,
 }
 
-impl GlobalDescriptorTable {
-    pub fn new() -> Self {
+impl Default for GlobalDescriptorTable {
+    #[must_use]
+    fn default() -> Self {
         Self {
             descriptors: [GDTDescriptor::default(); 8192],
             count: 0,
         }
     }
+}
 
+impl GlobalDescriptorTable {
     pub fn load(&self) {
         unsafe {
             asm!("lgdt [{}]", in(reg) &self.as_ptr(), options(readonly, nostack, preserves_flags));
@@ -194,8 +249,9 @@ impl GlobalDescriptorTable {
         }
     }
 
-    fn as_ptr(&self) -> DescTablePointer {
-        DescTablePointer {
+    #[must_use]
+    fn as_ptr(&self) -> DescriptorTablePointer {
+        DescriptorTablePointer {
             base: self.descriptors.as_ptr() as u64,
             limit: (self.count * size_of::<GDTDescriptor>() - 1) as u16,
         }

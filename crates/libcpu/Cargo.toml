@@ -13,3 +13,4 @@ edition.workspace = true
 [dependencies]
 bitflags = { version = "2.4.0" }
 static_assertions = "1.1.0"
+bit_field = "0.10.2"

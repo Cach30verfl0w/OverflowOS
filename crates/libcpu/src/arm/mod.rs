@@ -1,6 +1,6 @@
 use core::arch::asm;
 
-#[inline]
+#[inline(always)]
 pub fn wait_for_interrupts() {
-    unsafe { asm!("wfi") }
+    unsafe { asm!("wfi", options(noreturn)) }
 }

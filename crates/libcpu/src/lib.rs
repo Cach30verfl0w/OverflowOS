@@ -1,14 +1,14 @@
 #![feature(tuple_trait)]
 #![feature(unboxed_closures)]
+#![feature(abi_x86_interrupt)]
 #![no_std]
 
 extern crate alloc;
 
-// x86/x86_64
-#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+#[cfg(any(target_arch = "x86_64", target_arch = "x86_64"))]
 mod x86;
 
-#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+#[cfg(any(target_arch = "x86_64", target_arch = "x86_64"))]
 pub use x86::*;
 
 // ARM/ARM64

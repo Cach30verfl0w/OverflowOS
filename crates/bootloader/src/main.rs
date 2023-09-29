@@ -1,6 +1,7 @@
 #![no_std]
 #![no_main]
 #![feature(panic_info_message)]
+#![feature(abi_x86_interrupt)]
 
 extern crate alloc;
 
@@ -16,7 +17,7 @@ use alloc::{
     borrow::Cow,
     vec,
 };
-use libcpu::{halt_cpu, PrivilegeLevel};
+use libcpu::halt_cpu;
 use log::{
     info,
     LevelFilter,
@@ -80,19 +81,5 @@ fn main(_image_handle: Handle, mut system_table: SystemTable<Boot>) -> Status {
         .unwrap_or_else(|err| panic!("Unable to load Kernel: {}", err));
     let (runtime_services, memory_map) = system_table.exit_boot_services();
 
-    // Initialize the Global Descriptor Table
-    #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-    {
-        use libcpu::gdt::{
-            GDTDescriptor,
-            GlobalDescriptorTable,
-        };
-        let mut global_descriptor_table = GlobalDescriptorTable::new();
-        global_descriptor_table.insert(1, GDTDescriptor::code_segment(PrivilegeLevel::Ring0));
-        global_descriptor_table.insert(2, GDTDescriptor::data_segment(PrivilegeLevel::Ring0));
-        global_descriptor_table.load();
-    }
-
-    // Initialize the Interrupt Descriptor Table
     halt_cpu();
 }
