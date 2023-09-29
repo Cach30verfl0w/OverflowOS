@@ -3,8 +3,10 @@
 //!
 //! A single GDT descriptor contains the segment start as a linear address (only used on 32-bit
 //! systems), a limit which tells the maximum addressable unit, the access flags for the segment
-//! and the flags for the segment. The following structure shows how a single descriptor is
-//! represented in the memory (ML = Middle Limit, DF = Descriptor Flags):
+//! and the flags for the segment.
+//!
+//! The following structure shows how a single descriptor is represented in the memory on x86
+//! systems (ML = Middle Limit, DF = Descriptor Flags):
 //! ```text
 //! 0                   1                   2                   3                   4
 //! 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
@@ -13,6 +15,24 @@
 //! +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 //! |    Middle Base    |   Access Flags    | ML  | DF  |  Higher Base  |
 //! +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//! ```
+//! The limit values and base address values are only for 32-bit systems. As said before, these
+//! values are ignored in the 64-bit mode. Each selector covers the entire linear address space.
+//!
+//! The following structure shows how a single descriptor is represented in the memory on x86_64
+//! systems (ML = Middle Limit, DF = Descriptor Flags):
+//! ```text
+//! 0                   1                   2                   3                   4
+//! 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+//! +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//! |              Lower Limit              |          Segment Base Address         |
+//! +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//! |    Middle Base    |   Access Flags    | ML  | DF  |  Higher Base  |
+//! +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//! |                        "Highest" Segment Base Address                         |
+//! +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//! |                                    Reserved                                   |
+//! +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 //! ```
 //! The limit values and base address values are only for 32-bit systems. As said before, these
 //! values are ignored in the 64-bit mode. Each selector covers the entire linear address space.
@@ -124,12 +144,21 @@ bitflags! {
 /// [`GDTDescriptor::default`] to generate the Null descriptor. The implementation of the GDT is
 /// only needed for IA-32 and x86_64 architectures.
 ///
+/// **Disclaimer: The x86 only values are ignored by the CPU, if the target is x86_64**
+/// - `lower_limit` - These bytes are storing the first 16 bits of the limit (x86_64 only)
+/// - `lower_base_address` - These bytes are storing the first 16 bits of the base address of the
+/// section (32bit only)
+/// - `middle_base_address` - These bytes are storing the lower middle 16 bits of the base address
+/// of the section (32bit only)
+/// - `higher_base_address` - These bytes are storing the higher middle 16 bits of the base address
+/// of the section. (32bit only)
+/// - `highest_base_address` - These bytes are storing the last 32 bits of the base address of the
+/// section. (64bit only)
 /// - `access` - This field contains the access flags. All needed access flags are specified in
-/// [Access]. This value is supported on 32-bit and 64-bit systems.
+/// [Access]. This value is supported on 32-bit and 64-bit systems
 /// - `flags` - This field contains the descriptor flags. All needed descriptor flags are specified
-/// in [Flags]. This value is supported on 32-bit and 64-bit systems.
-///
-/// TODO: Overwrite `_ignored1` and `_ignored2` with the data for 32-bit compatibility
+/// in [Flags]. This value is supported on 32-bit and 64-bit systems. This value is supported on
+/// 32-bit and 64-bit systems. The flags are also containing the higher limit
 ///
 /// # See also
 /// - [Global Descriptor Table](https://wiki.osdev.org/Global_Descriptor_Table#Segment_Descriptor)
@@ -139,21 +168,35 @@ bitflags! {
 #[repr(C, packed)]
 #[derive(Clone, Copy, Ord, PartialOrd, Eq, PartialEq, Debug, Hash, Default)]
 pub struct GDTDescriptor {
-    /// In these bytes are data stored, that is only used at 32-bit systems. Currently, this library
-    /// only supports 64-bit systems, so this value is not needed.
-    _ignored1: [u8; 5],
+
+    /// These bytes are storing the first 16 bits of the limit. (32bit only)
+    lower_limit: u16,
+
+    /// These bytes are storing the first 16 bits of the base address of the section.
+    /// (32bit only)
+    lower_base_address: u16,
+
+    /// These bytes are storing the lower middle 16 bits of the base address of the section.
+    /// (32bit only)
+    middle_base_address: u8,
     
     /// This field contains the access flags. All needed access flags are specified in
     /// [Access]. This value is supported on 32-bit and 64-bit systems.
     access: u8,
 
     /// This field contains the descriptor flags. All needed descriptor flags are specified in
-    /// [Flags]. This value is supported on 32-bit and 64-bit systems.
+    /// [Flags]. This value is supported on 32-bit and 64-bit systems. The flags are also containing
+    /// the higher limit.
     flags: u8,
 
-    /// In these bytes are data stored, that is only used at 32-bit systems. Currently, this library
-    /// only supports 64-bit systems, so this value is not needed.
-    _ignored2: [u8; 2],
+    /// These bytes are storing the higher middle 16 bits of the base address of the section.
+    /// (32bit only)
+    higher_base_address: u8,
+
+    /// These are bytes reserved by the CPU. These bytes are only present on x86_64 systems. There
+    /// is also the "highest" base address, but the CPU doesn't use that data. (I think so)
+    #[cfg(target_arch = "x86_64")]
+    reserved: u64
 }
 
 impl GDTDescriptor {
@@ -164,6 +207,8 @@ impl GDTDescriptor {
     /// - `privilege` - This parameter defines the privilege level of the descriptor
     /// - `access` - This parameter defines the access flags of the descriptor
     /// - `flag` - This parameter defines the flags of the descriptor
+    ///
+    /// TODO: Validate x86 implementation and set data
     ///
     /// # See also
     /// - [GDT Tutorial](https://wiki.osdev.org/GDT_Tutorial#What_to_Put_In_a_GDT)
