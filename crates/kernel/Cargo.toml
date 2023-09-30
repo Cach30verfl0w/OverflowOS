@@ -10,5 +10,8 @@ repository.workspace = true
 authors.workspace = true
 edition.workspace = true
 
+[package.metadata.osimage]
+kind = "kernel"
+
 [dependencies]
 uefi = { version = "0.24.0", features = ["alloc", "global_allocator"] }

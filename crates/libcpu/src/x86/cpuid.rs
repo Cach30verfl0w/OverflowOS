@@ -81,7 +81,7 @@ macro_rules! vendor {
         }
 
         impl Display for $name {
-            fn fmt(&self, formatter: &mut Formatter<'_>) -> Result<(), Error> {<
+            fn fmt(&self, formatter: &mut Formatter<'_>) -> Result<(), Error> {
                 match self {
                     $(
                     Self::$vendor => write!(formatter, "{}", $display),

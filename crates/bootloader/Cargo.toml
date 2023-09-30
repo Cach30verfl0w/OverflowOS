@@ -10,6 +10,9 @@ repository.workspace = true
 authors.workspace = true
 edition.workspace = true
 
+[package.metadata.osimage]
+kind = "bootloader"
+
 # uefi-rs as dependency with support for alloc crate and a global allocator
 [dependencies.uefi]
 version = "0.24.0"
