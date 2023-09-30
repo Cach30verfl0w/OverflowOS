@@ -1,6 +1,10 @@
 //! This module implements the IA-32 and x86_64 specific `CPUID` instruction and wraps the
 //! structures and implementations over a user-friendly Rust API.
 //!
+//! Here is a list with all implemented variations of the `CPUID` instruction:
+//! - `EAX = 0` => Indicator of the Processor Vendor
+//! - `EAX = 1` => Bits of the processor's features
+//!
 //! # See also
 //! - [CPUID](https://wiki.osdev.org/CPUID) by [OSDev.org](https://wikie.osdev.org/)
 //! - [CPUID - CPU Identification](https://www.felixcloutier.com/x86/cpuid) by
@@ -24,12 +28,13 @@ use core::arch::x86_64::__cpuid;
 pub use core::arch::x86_64::has_cpuid;
 
 macro_rules! features {
-    ($(#[$attr:meta])* pub enum $name: ident { $($feature: ident ($register: ident, $display: expr) =
+    ($(#[$attr:meta])* pub enum $name: ident { $($(#[$feature_attr: meta])* $feature: ident ($register: ident, $display: expr) =
     $value: expr),* }) => {
         $(#[$attr])*
         #[repr(u8)]
         pub enum $name {
             $(
+            $(#[$feature_attr])*
             $feature,
             )*
             Unknown
@@ -63,19 +68,20 @@ macro_rules! features {
 }
 
 macro_rules! vendor {
-    ($(#[$attr:meta])* pub enum $name: ident { $($vendor: ident ($($vendor_string: expr),*) =
+    ($(#[$attr:meta])* pub enum $name: ident { $($(#[$vendor_addr:meta])* $vendor: ident ($($vendor_string: expr),*) =
     $display: expr),* }) => {
         $(#[$attr])*
         #[repr(u8)]
         pub enum $name {
             $(
+            $(#[$vendor_addr])*
             $vendor,
             )*
             Unknown
         }
 
         impl Display for $name {
-            fn fmt(&self, formatter: &mut Formatter<'_>) -> Result<(), Error> {
+            fn fmt(&self, formatter: &mut Formatter<'_>) -> Result<(), Error> {<
                 match self {
                     $(
                     Self::$vendor => write!(formatter, "{}", $display),
@@ -118,34 +124,138 @@ macro_rules! vendor {
 }
 
 vendor! {
+    /// This enum lists all variant of known x86 processor vendors. You can call [request_cpu_vendor]
+    /// to get the enum value of the processor vendor on the current system.
+    ///
+    /// Here is a list with all companies/products and the company/group name:
+    /// - [CPUVendor::AMD] (Semiconductor Company) - Advanced Micro Devices, Inc.
+    /// - [CPUVendor::Intel] (Semiconductor Chip Manufacturer) - Intel Corporation
+    /// - [CPUVendor::VIA] (Semiconductor Company) - VIA Technologies, Inc.
+    /// - [CPUVendor::Transmeta] (Semiconductor Design Company) - Transmeta Corporation
+    /// - [CPUVendor::Cyrix] (Microprocessor Developer) - Cyrix Corporation
+    /// - [CPUVendor::Centaur] (x86 CPU Design Company) - Centaur Technology
+    /// - [CPUVendor::NexGen] (Semiconductor Company) - NexGen Incorporated
+    /// - [CPUVendor::UMX] (Semiconductor Company) - United Microelectronics Corporation
+    /// - [CPUVendor::SiS] (Manufacturing Company) - Silicon Integrated Systems Corp.
+    /// - [CPUVendor::Rise] (Microprocessor Company) - Rise Technology
+    /// - [CPUVendor::Vortex] (Processor Family) - Silicon Integrated Systems Corp.
+    /// - [CPUVendor::AO486] (Processor Family) - Advanced Micro Devices, Inc.
+    /// - [CPUVendor::Zhaoxin] (Semiconductor Family) - Shanghai Zhaoxin Semiconductor Co., Ltd.
+    /// - [CPUVendor::Hygon] (Manufacturing Company) - Hygon Information Technology Co., Ltd.
+    /// - [CPUVendor::Elbrus] (Processor Family/Company) - Moscow Center of SPARC Technologies
+    /// - [CPUVendor::QEMU] (Emulation Software) - Quick Emulator (QEMU)
+    /// - [CPUVendor::KVM] (Virtualization Module) - Kernel-based Virtual Machine (KVM)
+    /// - [CPUVendor::VMware] (Product/Company) - VMware, Inc.
+    /// - [CPUVendor::VirtualBox] (Product) - Oracle Corporation
+    /// - [CPUVendor::Xen] (Hypervisor) - Xen Hypervisor
+    /// - [CPUVendor::HyperV] (Hypervisor) - Microsoft Corporation
+    /// - [CPUVendor::Parallels] (Hypervisor) - Parallels
+    /// - [CPUVendor::BHYVE] (Hypervisor) - Bhyve
+    /// - [CPUVendor::QNX] (Hypervisor) - QNX
     #[derive(Clone, Copy, Ord, PartialOrd, Eq, PartialEq, Debug, Hash)]
     pub enum CPUVendor {
+        /// This variant indicates the American semiconductor company
+        /// [Advanced Micro Devices, Inc. (AMD)](https://en.wikipedia.org/wiki/AMD) as the CPU
+        /// vendor
         AMD        ("AuthenticAMD", "AMDisbetter!") = "Advanced Micro Devices, Inc.",
+
+        /// This variant indicates the American semiconductor chip manufacturer
+        /// [Intel Corporation](https://en.wikipedia.org/wiki/Intel) as the CPU vendor
         Intel      ("GenuineIntel")                 = "Intel Corporation",
+
+        /// This variant indicates the Taiwanese semiconductor company
+        /// [Via Technologies Inc.](https://en.wikipedia.org/wiki/VIA_Technologies) as the CPU
+        /// vendor
         VIA        ("VIA VIA VIA ")                 = "Via Technologies, Inc.",
+
+        /// This variant indicates the American semiconductor design company
+        /// [Transmeta Corporation](https://en.wikipedia.org/wiki/Transmeta) as the CPU vendor
         Transmeta  ("GenuineTMx86", "TransmetaCPU") = "Transmeta Corporation",
+
+        /// This variant indicates the American microprocessor developer
+        /// [Cyrix Corporation](https://en.wikipedia.org/wiki/Cyrix) as the CPU vendor
         Cyrix      ("CyrixInstead")                 = "Cyrix Corporation",
+
+        /// This variant indicates the American x86 CPU design company
+        /// [Centaur Technology, Inc.](https://en.wikipedia.org/wiki/Centaur_Technology) as the CPU
+        /// vendor
         Centaur    ("CentaurHauls")                 = "Centaur Technology",
+
+        /// This variant indicates the American semiconductor company
+        /// [NexGen, Inc.](https://en.wikipedia.org/wiki/NexGen) as the CPU vendor
         NexGen     ("NexGenDriven")                 = "NexGen Incorporated",
+
+        /// This variant indicates the Taiwanese semiconductor company
+        /// [United Microelectronics Corporation](https://en.wikipedia.org/wiki/United_Microelectronics_Corporation)
+        /// as the CPU vendor
         UMC        ("UMC UMC UMC ")                 = "United Microelectronics Corporation",
+
+        /// This variant indicates the Taiwanese manufacturing company
+        /// [Silicon Integrated Systems](https://en.wikipedia.org/wiki/Silicon_Integrated_Systems)
+        /// as the CPU vendor
         SiS        ("SiS SiS SiS ")                 = "Silicon Integrated Systems Corp.",
+
+        /// This variant indicates the American microprocessor manufacturer
+        /// [Rise Technology](https://en.wikipedia.org/wiki/Rise_Technology)
         Rise       ("RiseRiseRise")                 = "Rise Technology",
-        Vortex     ("Vortex86 SoC")                 = "Silicon Integrated Systems Corp.", // I think so
+
+        /// This variant indicates a processor family of the Taiwanese manufacturing company
+        /// [Silicon Integrated Systems](https://en.wikipedia.org/wiki/Silicon_Integrated_Systems)
+        /// (I think so)
+        Vortex     ("Vortex86 SoC")                 = "Silicon Integrated Systems Corp.",
+
+        /// This variant indicates a processor family of the American semiconductor company
+        /// [Advanced Micro Devices, Inc. (AMD)](https://en.wikipedia.org/wiki/AMD)
         AO486      ("MiSTer AO486", "GenuineAO486") = "AO486",
+
+        /// This variant indicates the Chinese semiconductor company
+        /// [Shanghai Zhaoxin Semiconductor Co., Ltd.](https://en.wikipedia.org/wiki/Zhaoxin) as the
+        /// CPU vendor
         Zhaoxin    ("  Shanghai  ")                 = "Shanghai Zhaoxin Semiconductor Co., Ltd.",
+
+        /// This variant indicates the Chinese manufacturing company Hygon Information Technology
+        /// Co., Ltd. as the CPU vendor
         Hygon      ("HygonGenuine")                 = "Hygon Information Technology Co., Ltd.",
+
+        /// This variant indicates the Russian microprocessor company
+        /// [Moscow Center of SPARC Technologies](https://en.wikipedia.org/wiki/MCST) as the CPU
+        /// vendor
         Elbrus     ("E2K MACHINE ")                 = "Moscow Center of SPARC Technologies",
 
-        // Virtual
+        /// This variant indicates that the system is emulated by
+        /// [Quick Emulator (QEMU)](https://en.wikipedia.org/wiki/QEMU)
         QEMU       ("TCGTCGTCGTCG")                 = "Quick Emulator (QEMU)",
+
+        /// This variant indicates that the system is virtualized by the Linux module
+        /// [KVM (Kernel-based Virtual Machine)](https://en.wikipedia.org/wiki/Kernel-based_Virtual_Machine)
         KVM        (" KVMKVMKVM  ")                 = "Kernel-based Virtual Machine",
-        VMWARE     ("VMwareVMware")                 = "VMware",
+
+        /// This variant indicates that the system is virtualized by one of the virtualization
+        /// products by [VMware, Inc.](https://en.wikipedia.org/wiki/Kernel-based_Virtual_Machine)
+        VMware     ("VMwareVMware")                 = "VMware",
+
+        /// This variant indicates that the system is virtualized by
+        /// [VirtualBox](https://en.wikipedia.org/wiki/VirtualBox)
         VirtualBox ("VBoxVBoxVBox")                 = "VirtualBox",
-        Xen        ("XenVMMXenVMM")                 = "Xen Hypervisor",
-        HyperV     ("Microsoft Hv")                 = "Microsoft HyperV",
+
+        /// This variant indicates that the system is virtualized by the
+        /// [Xen Hypervisor](https://en.wikipedia.org/wiki/Xen)
+        Xen        ("XenVMMXenVMM")                 = "Xen",
+
+        /// This variant indicates that the system is virtualized by the
+        /// [Microsoft Hyper-V Hypervisor](https://en.wikipedia.org/wiki/Hyper-V)
+        HyperV     ("Microsoft Hv")                 = "Microsoft Hyper-V",
+
+        /// This variant indicates that the system is virtualized by
+        /// [Parallels](https://en.wikipedia.org/wiki/Parallels_(company))
         Parallels  (" prl hyperv ", " lrpepyh vr ") = "Parallels",
+
+        /// This variant indicates that the system is virtualized by
+        /// [bhyve Hypervisor](https://en.wikipedia.org/wiki/Bhyve)
         BHYVE      ("bhyve bhyve ")                 = "bhyve",
-        QNX        (" QNXQVMBSQG ")                 = "QNX Hypervisor"
+
+        /// This variant indicates that the system is virtualized by the QNX Hypervisor
+        QNX        (" QNXQVMBSQG ")                 = "QNX"
     }
 }
 
