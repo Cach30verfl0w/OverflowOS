@@ -139,6 +139,7 @@ vendor! {
 }
 
 features! {
+    #[allow(non_camel_case_types)]
     #[derive(Clone, Copy, Ord, PartialOrd, Eq, PartialEq, Debug, Hash)]
     pub enum CPUFeature {
         SSE3        (ecx, "SSE3") = 1 << 0,

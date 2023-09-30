@@ -19,10 +19,7 @@ use alloc::{
     vec,
 };
 use libcpu::{
-    cpuid::{
-        request_cpu_vendor,
-        CPUFeature,
-    },
+    cpuid::request_cpu_vendor,
     gdt::{
         GDTDescriptor,
         GlobalDescriptorTable,
