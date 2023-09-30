@@ -263,18 +263,103 @@ features! {
     #[allow(non_camel_case_types)]
     #[derive(Clone, Copy, Ord, PartialOrd, Eq, PartialEq, Debug, Hash)]
     pub enum CPUFeature {
+        /// SSE3 (Streaming SIMD Extensions 3) is a instruction set extension for IA-32 that
+        /// provides instructions for 512-bit registers and operation with 512-bit data in one
+        /// instruction. SSE3 is used to optimize algorithm for bigger data.
+        ///
+        /// # See also
+        /// - [SSE3](https://en.wikipedia.org/wiki/SSE3) by [Wikipedia](https://en.wikipedia.org)
         SSE3        (ecx, "SSE3") = 1 << 0,
+
+        /// Carray-Less Multiplication (PCLMUL) is a instruction set extension for IA-32 that
+        /// is an extension for AES-NI und improves the performance of encryption algorithm
+        /// implementations, especially for algorithms which are using the Galois-Field
+        /// multiplication.
+        ///
+        /// # See also
+        /// - [CLMUL instruction set](https://en.wikipedia.org/wiki/CLMUL_instruction_set) by
+        /// [Wikipedia](https://en.wikipedia.org)
         PCLMUL      (ecx, "Carry-Less Multiplication") = 1 << 1,
         DTES64      (ecx, "64-Bit Debug Store") = 1 << 2,
+
+        /// This feature implements the instructions `MONITOR` and `MWAIT`. These instructions are
+        /// used to improve the performance of multi-core systems. `MONITOR` is used to mark a
+        /// memory section and `MWAIT` tells to processor to wait for changes in the section, that
+        /// was selected before. These instructions also can prevent spin locks.
         MONITOR     (ecx, "MONITOR and MWAIT instructions") = 1 << 3,
         DS_CPL      (ecx, "CPL-qualified Debug Store") = 1 << 4,
+
+        /// The Virtual Machine Extensions (VMX) are a feature for IA-32 processors that make
+        /// Hardware virtualization possible. So a single processor can execute multiple virtual
+        /// machines. AMD has for this the AMD Virtualization (AMD-V) and Intel has the Intel
+        /// Virtualization (VT-x for that)
+        ///
+        /// - The processor implements the VMX Root Mode (In this mode, the host system is running)
+        /// and the VMX Non-Root Mode (In this mode, the guest system is running)
+        /// - The processor implements the VMCS (Virtual Machine Control Structure) to configure
+        /// a virtual machine.
+        /// - The processor implements VM-Exit (Jump into the Root Mode) and VM-Entry (Jump into
+        /// the Non-Root) mode.
+        /// - The processor implements the MM (Virtual Machine Monitor) to make the development
+        /// of hypervisors more simpler.
+        ///
+        /// # See also
+        /// - [x86 Virtualization](https://en.wikipedia.org/wiki/X86_virtualization#Hardware-assisted_virtualization)
+        /// by [Wikipedia](https://en.wikipedia.org)
         VMX         (ecx, "Virtual Machine Extensions") = 1 << 5,
+
+        /// The Safer Mode Extensions are part of the Intel Trusted Execution Technology, that is
+        /// running on the Intel Management Engine (Ring -2).
+        ///
+        /// # See also
+        /// - [Intel Management Engine](https://en.wikipedia.org/wiki/Intel_Management_Engine#Firmware)
+        /// by [Wikipedia](https://en.wikipedia.org)
+        /// - [Trusted Execution Technology](https://en.wikipedia.org/wiki/Trusted_Execution_Technology)
+        /// by [Wikipedia](https://en.wikipedia.org)
         SMX         (ecx, "Safer Mode Extensions") = 1 << 6,
+
+        /// The Intel EIST (Enhanced Intel SpeedStep Technology) is a technology, that was developed
+        /// by the Intel Corporation to improve the energy efficiency of the processors.
+        /// - Dynamic Clock Frequency Adjustment
+        /// - Voltage Adjustment
+        /// - Dynamic Frequency and Voltage Switching
+        ///
+        /// # See also
+        /// - [SpeedStep](https://en.wikipedia.org/wiki/SpeedStep) by
+        /// [Wikipedia](https://en.wikipedia.org)
         EST         (ecx, "Enhanced SpeedStep") = 1 << 7,
+
+        /// The Thermal Monitor is a feature that was invented by the Intel Corporation to regulate
+        /// and monitor the temperature of the processor. This also provides the auto shutdown
+        /// before the processor takes damage by the heat.
+        ///
+        /// # See also
+        /// - [Thermal Monitor 2](https://en.wikipedia.org/wiki/Thermal_Monitor_2) by
+        /// [Wikipedia](https://en.wikipedia.org)
         TM2         (ecx, "Thermal Monitor 2") = 1 << 8,
+
+        /// Supplemental Streaming SIMD Extensions 3 (SSSE3) is an extension for SSE3. SSSE3 adds
+        /// some instructions to improve SSE3.
+        ///
+        /// # See also
+        /// - [SSSE3](https://en.wikipedia.org/wiki/SSSE3) by [Wikipedia](https://en.wikipedia.org)
         SSSE3       (ecx, "Supplemental SSE3") = 1 << 9,
+
+        /// L1 Context ID is a mechanism that can associate the content of the L1 Cache to a
+        /// specific context or a specific task.
         CID         (ecx, "L1 Context ID") = 1 << 10,
+
+        /// Silicon Debug interface (SDBG) is a mechanism to identify and fix flaws in software
+        /// or hardware systems.
         SDBG        (ecx, "Silicon Debug Interface") = 1 << 11,
+
+        /// Fused Multiply-Add (FMA3) is a arithmetic instruction to calculate a multiplication and
+        /// an addition with one step. That can improve the performance of a calculation. This
+        /// feature is often used in Machine Larning or other intensive tasks.
+        ///
+        /// # See also
+        /// - [FMA Instruction Set](https://en.wikipedia.org/wiki/FMA_instruction_set) by
+        /// [Wikipedia](https://en.wikipedia.org)
         FMA         (ecx, "Fused Multiply-Add (FMA3)") = 1 << 12,
         CX16        (ecx, "CMPXCHG1B instruction") = 1 << 13,
         XTPR        (ecx, "Can disable sending task priority messages") = 1 << 14,
@@ -294,6 +379,7 @@ features! {
         F16C        (ecx, "Floating-point conversion instructions to/from FP16 format") = 1 << 29,
         RDRAND      (ecx, "RDRAND (HRNG) feature") = 1 << 30,
         HYPERVISOR  (ecx, "Hypervisor is present") = 1 << 31,
+
         FPU         (edx, "Onboard x87 FPU") = 1 << 0,
         VME         (edx, "Virtual 8086 Mode Extensions") = 1 << 1,
         DE          (edx, "Debugging Extensions") = 1 << 2,
