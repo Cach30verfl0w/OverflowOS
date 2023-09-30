@@ -21,6 +21,7 @@ use alloc::{
     vec::Vec,
 };
 use core::arch::x86_64::__cpuid;
+pub use core::arch::x86_64::has_cpuid;
 
 macro_rules! features {
     ($(#[$attr:meta])* pub enum $name: ident { $($feature: ident ($register: ident, $display: expr) =
@@ -31,6 +32,7 @@ macro_rules! features {
             $(
             $feature,
             )*
+            Unknown
         }
 
         impl Display for $name {
@@ -39,19 +41,22 @@ macro_rules! features {
                     $(
                     Self::$feature => write!(formatter, "{}", $display),
                     )*
+                    Self::Unknown => write!(formatter, "Unknown")
                 }
             }
         }
 
         #[must_use]
         pub fn request_cpu_features() -> Vec<$name> {
-            let cpuid_result = unsafe { __cpuid(1) };
             let mut data = Vec::new();
-            $(
-            if (cpuid_result.$register & $value == $value) {
-                data.push($name::$feature);
+            if has_cpuid() {
+                let cpuid_result = unsafe { __cpuid(1) };
+                $(
+                if (cpuid_result.$register & $value == $value) {
+                    data.push($name::$feature);
+                }
+                )*
             }
-            )*
             data
         }
     }
@@ -66,6 +71,7 @@ macro_rules! vendor {
             $(
             $vendor,
             )*
+            Unknown
         }
 
         impl Display for $name {
@@ -74,6 +80,7 @@ macro_rules! vendor {
                     $(
                     Self::$vendor => write!(formatter, "{}", $display),
                     )*
+                    Self::Unknown => write!(formatter, "Unknown")
                 }
             }
         }
@@ -94,14 +101,18 @@ macro_rules! vendor {
 
         #[must_use]
         pub fn request_cpu_vendor() -> $name {
-            let cpuid_result = unsafe { __cpuid(0) };
-            $name::from(String::from_utf8_lossy(
-                &[
-                    cpuid_result.ebx.to_ne_bytes(),
-                    cpuid_result.edx.to_ne_bytes(),
-                    cpuid_result.ecx.to_ne_bytes()
-                ].concat()
-            ).trim().to_string())
+            if has_cpuid() {
+                let cpuid_result = unsafe { __cpuid(0) };
+                $name::from(String::from_utf8_lossy(
+                    &[
+                        cpuid_result.ebx.to_ne_bytes(),
+                        cpuid_result.edx.to_ne_bytes(),
+                        cpuid_result.ecx.to_ne_bytes()
+                    ].concat()
+                ).trim().to_string())
+            } else {
+                $name::Unknown
+            }
         }
     }
 }

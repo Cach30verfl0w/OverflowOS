@@ -1,6 +1,5 @@
-#![feature(tuple_trait)]
-#![feature(unboxed_closures)]
 #![feature(abi_x86_interrupt)]
+#![feature(stdsimd)]
 #![no_std]
 
 extern crate alloc;
