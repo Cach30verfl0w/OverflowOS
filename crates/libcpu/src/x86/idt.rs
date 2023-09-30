@@ -235,7 +235,7 @@ impl InterruptStackFrame {
 /// running and a NAE event occurs. (This fault is only available on AMD CPUs with AMD SEV-ES)
 ///
 /// - [Exception::Security] - This exception occurs when security-sensitive events under SVM are
-/// occurring (This fault is only available on AMD CPUs with AMD-V (I think so))
+/// occurring (This fault is only available on AMD CPUs with AMD-V)
 ///
 /// # See also
 /// - [Exceptions](https://wiki.osdev.org/Exceptions) by [OSDev.org](https://wiki.osdev.org/)
