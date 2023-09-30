@@ -57,16 +57,15 @@
 //! - [x86 Handling Exceptions](https://hackernoon.com/x86-handling-exceptions-lds3uxc) by
 //! [HackerNoon.com](https://hackernoon.com/)
 
-use crate::{
-    DescriptorTablePointer,
-    MemoryAddress,
-    PrivilegeLevel,
-    SegmentSelector,
-};
+use crate::{DescriptorTable, DescriptorTablePointer, halt_cpu, MemoryAddress, PrivilegeLevel, SegmentSelector};
 use core::{
     arch::asm,
     mem::size_of,
 };
+
+extern "x86-interrupt" fn default_interrupt_handler(stack_frame: &mut InterruptStackFrame) {
+    halt_cpu();
+}
 
 /// This enum describes the types of gates that interrupt descriptors are able to represent. I don't
 /// included the Task Gate, because that Gate can lead into a GP exception or is poorly optimized or
@@ -563,7 +562,7 @@ pub enum Exception {
 /// - [Interrupt Descriptor Table (x86_64)](https://wiki.osdev.org/Interrupt_Descriptor_Table#Structure_on_x86-64)
 /// by [OSDev.org](https://wiki.osdev.org/)
 #[repr(C, packed)]
-#[derive(Clone, Copy, Ord, PartialOrd, Eq, PartialEq, Debug, Hash, Default)]
+#[derive(Clone, Copy, Ord, PartialOrd, Eq, PartialEq, Debug, Hash)]
 pub struct IDTDescriptor {
     lower_isr_address: u16,
     segment_selector: SegmentSelector,
@@ -572,6 +571,17 @@ pub struct IDTDescriptor {
     middle_isr_address: u16,
     higher_isr_address: u32,
     reserved: u32,
+}
+
+impl Default for IDTDescriptor {
+    fn default() -> Self {
+        IDTDescriptor::new(
+            (default_interrupt_handler as *const ()) as u64,
+            SegmentSelector::new(1, DescriptorTable::GDT, PrivilegeLevel::KernelSpace),
+            GateType::Trap,
+            PrivilegeLevel::KernelSpace
+        )
+    }
 }
 
 impl IDTDescriptor {

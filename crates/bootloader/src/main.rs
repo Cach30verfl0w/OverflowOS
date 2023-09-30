@@ -109,7 +109,7 @@ fn main(_image_handle: Handle, mut system_table: SystemTable<Boot>) -> Status {
     global_descriptor_table.load();
 
     let mut interrupt_descriptor_table = InterruptDescriptorTable::default();
-    interrupt_descriptor_table.insert(
+    /*interrupt_descriptor_table.insert(
         Exception::Division as usize,
         IDTDescriptor::new(
             (test_interrupt as *const ()) as u64,
@@ -117,7 +117,7 @@ fn main(_image_handle: Handle, mut system_table: SystemTable<Boot>) -> Status {
             GateType::Trap,
             PrivilegeLevel::KernelSpace,
         ),
-    );
+    );*/
     interrupt_descriptor_table.load();
     return Status::SUCCESS;
 }
