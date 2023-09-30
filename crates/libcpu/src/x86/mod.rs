@@ -192,7 +192,7 @@ impl From<DescriptorTable> for bool {
 /// [OSDev.org](https://wiki.osdev.org/)
 #[repr(transparent)]
 #[derive(Clone, Copy, Ord, PartialOrd, Eq, PartialEq, Debug, Hash, Default)]
-pub struct SegmentSelector(u16);
+pub struct SegmentSelector(pub u16);
 
 impl SegmentSelector {
     /// This function creates the segment selector by the single values of the entry index, type of

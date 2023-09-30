@@ -17,6 +17,7 @@ use alloc::{
     borrow::Cow,
     vec,
 };
+use core::ffi::c_void;
 use libcpu::{
     cpuid::get_cpu_features,
     gdt::{
@@ -24,7 +25,16 @@ use libcpu::{
         GlobalDescriptorTable,
     },
     halt_cpu,
+    idt::{
+        Exception,
+        GateType,
+        IDTDescriptor,
+        InterruptDescriptorTable,
+        InterruptStackFrame,
+    },
+    DescriptorTable,
     PrivilegeLevel,
+    SegmentSelector,
 };
 use log::{
     info,
@@ -44,6 +54,10 @@ use uefi::{
     Handle,
     Status,
 };
+
+extern "x86-interrupt" fn test_interrupt(stack_frame: &mut InterruptStackFrame) {
+    halt_cpu();
+}
 
 #[entry]
 fn main(_image_handle: Handle, mut system_table: SystemTable<Boot>) -> Status {
@@ -84,8 +98,6 @@ fn main(_image_handle: Handle, mut system_table: SystemTable<Boot>) -> Status {
     file.read(file_buffer.as_mut_slice())
         .unwrap_or_else(|err| panic!("Unable to read Kernel as file: {}", err));
 
-    info!("{:?}", get_cpu_features());
-
     // Parse as ELF file
     let function = parse_elf_file(file_buffer.as_slice())
         .unwrap_or_else(|err| panic!("Unable to load Kernel: {}", err));
@@ -96,5 +108,16 @@ fn main(_image_handle: Handle, mut system_table: SystemTable<Boot>) -> Status {
     global_descriptor_table.insert(2, GDTDescriptor::data_segment(PrivilegeLevel::KernelSpace));
     global_descriptor_table.load();
 
-    halt_cpu();
+    let mut interrupt_descriptor_table = InterruptDescriptorTable::default();
+    interrupt_descriptor_table.insert(
+        Exception::Division as usize,
+        IDTDescriptor::new(
+            (test_interrupt as *const ()) as u64,
+            SegmentSelector::new(1, DescriptorTable::GDT, PrivilegeLevel::KernelSpace),
+            GateType::Trap,
+            PrivilegeLevel::KernelSpace,
+        ),
+    );
+    interrupt_descriptor_table.load();
+    return Status::SUCCESS;
 }

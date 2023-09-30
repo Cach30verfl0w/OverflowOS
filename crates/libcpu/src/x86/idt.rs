@@ -60,6 +60,7 @@
 use crate::{
     DescriptorTablePointer,
     MemoryAddress,
+    PrivilegeLevel,
     SegmentSelector,
 };
 use core::{
@@ -107,6 +108,7 @@ pub struct InterruptStackFrame {
 impl InterruptStackFrame {
     /// This function calls the iretq instruction to recover the CPU state
     #[inline(always)]
+    #[cfg(target_arch = "x86_64")]
     pub unsafe fn recover(&self) -> ! {
         asm!(
             r#"
@@ -116,6 +118,28 @@ impl InterruptStackFrame {
             push {code_segment}
             push {instruction_pointer}
             iretq
+            "#,
+            cpu_flags = in(reg) self.cpu_flags,
+            instruction_pointer = in(reg) self.instruction_pointer,
+            stack_pointer = in(reg) self.stack_pointer,
+            code_segment = in(reg) self.code_segment,
+            stack_segment = in(reg) self.stack_segment,
+            options(noreturn)
+        )
+    }
+
+    /// This function calls the iret instruction to recover the CPU state
+    #[inline(always)]
+    #[cfg(target_arch = "x86")]
+    pub unsafe fn recover(&self) -> ! {
+        asm!(
+            r#"
+            push {stack_segment}
+            push {stack_pointer}
+            push {cpu_flags}
+            push {code_segment}
+            push {instruction_pointer}
+            iret
             "#,
             cpu_flags = in(reg) self.cpu_flags,
             instruction_pointer = in(reg) self.instruction_pointer,
@@ -531,6 +555,8 @@ pub enum Exception {
 /// - `flags` - This field represents the flags of the descriptor.
 /// - `higher_isr_address` - This field represents the last 16 bits of the ISR function.
 ///
+/// TODO: 32bit Support
+///
 /// # See also
 /// - [Interrupt Descriptor Table (IA-32)](https://wiki.osdev.org/Interrupt_Descriptor_Table#Structure_on_IA-32)
 /// by [OSDev.org](https://wiki.osdev.org/)
@@ -539,32 +565,30 @@ pub enum Exception {
 #[repr(C, packed)]
 #[derive(Clone, Copy, Ord, PartialOrd, Eq, PartialEq, Debug, Hash, Default)]
 pub struct IDTDescriptor {
-    /// This field represents the first 16 bits of the ISR function address
     lower_isr_address: u16,
-
-    /// This field represents the segment selector which must point to a valid
-    /// code segment in the GDT
     segment_selector: SegmentSelector,
-
-    /// This field is always zero and should not be set by the user
-    reserved: u8,
-
-    /// This field represents the flags of the descriptor
+    ist: u8,
     flags: u8,
-
-    #[cfg(target_arch = "x86")]
-    /// This field represents the last 16 bits of the ISR function
-    higher_isr_address: u16,
-
-    #[cfg(target_arch = "x86_64")]
-    /// This field represents the middle 16 bits of the ISR function address
     middle_isr_address: u16,
-
-    /// This field represents the last 32 bits of the ISR function address
     higher_isr_address: u32,
+    reserved: u32,
+}
 
-    #[cfg(target_arch = "x86_64")]
-    padding: [u8; 4],
+impl IDTDescriptor {
+    pub fn new(
+        handler_address: MemoryAddress, selector: SegmentSelector, gate_type: GateType,
+        privilege_level: PrivilegeLevel,
+    ) -> Self {
+        Self {
+            lower_isr_address: (handler_address & 0xFFFF) as u16,
+            segment_selector: selector,
+            ist: 0,
+            flags: 0b1000_0000 | (privilege_level as u8) | (gate_type as u8),
+            middle_isr_address: ((handler_address >> 16) & 0xFFFF) as u16,
+            higher_isr_address: ((handler_address >> 32) & 0xFFFFFFFF) as u32,
+            reserved: 0,
+        }
+    }
 }
 
 /// This structure represents the Interrupt Descriptor Table with the maximum of 256 entries. In #
@@ -580,10 +604,10 @@ pub struct IDTDescriptor {
 /// - [Interrupts Tutorial](https://wiki.osdev.org/Interrupts_tutorial) by
 /// [OSDev.org](https://wiki.osdev.org)
 /// - [IDTDescriptor] (Source Code)
+#[repr(C, packed)]
 #[derive(Clone, Copy, Ord, PartialOrd, Eq, PartialEq, Debug, Hash)]
 pub struct InterruptDescriptorTable {
     descriptors: [IDTDescriptor; 256],
-    count: usize,
 }
 
 impl Default for InterruptDescriptorTable {
@@ -591,7 +615,6 @@ impl Default for InterruptDescriptorTable {
     fn default() -> Self {
         Self {
             descriptors: [IDTDescriptor::default(); 256],
-            count: 0,
         }
     }
 }
@@ -609,6 +632,11 @@ impl InterruptDescriptorTable {
         }
     }
 
+    /// This function inserts a [IDTDescriptor] at the specified index in the IDT.
+    pub fn insert(&mut self, index: usize, descriptor: IDTDescriptor) {
+        self.descriptors[index] = descriptor;
+    }
+
     /// This function generates a pointer to the Interrupt Descriptor Table (IDT) with the base
     /// address and the size of the IDT as limit.
     ///
@@ -619,7 +647,7 @@ impl InterruptDescriptorTable {
     pub fn as_ptr(&self) -> DescriptorTablePointer {
         DescriptorTablePointer {
             base: self.descriptors.as_ptr() as MemoryAddress,
-            size: (self.count * size_of::<IDTDescriptor>() - 1) as u16,
+            size: (256 * size_of::<IDTDescriptor>() - 1) as u16,
         }
     }
 }
