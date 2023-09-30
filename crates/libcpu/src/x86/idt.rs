@@ -57,7 +57,14 @@
 //! - [x86 Handling Exceptions](https://hackernoon.com/x86-handling-exceptions-lds3uxc) by
 //! [HackerNoon.com](https://hackernoon.com/)
 
-use crate::{DescriptorTable, DescriptorTablePointer, halt_cpu, MemoryAddress, PrivilegeLevel, SegmentSelector};
+use crate::{
+    halt_cpu,
+    DescriptorTable,
+    DescriptorTablePointer,
+    MemoryAddress,
+    PrivilegeLevel,
+    SegmentSelector,
+};
 use core::{
     arch::asm,
     mem::size_of,
@@ -579,7 +586,7 @@ impl Default for IDTDescriptor {
             (default_interrupt_handler as *const ()) as u64,
             SegmentSelector::new(1, DescriptorTable::GDT, PrivilegeLevel::KernelSpace),
             GateType::Trap,
-            PrivilegeLevel::KernelSpace
+            PrivilegeLevel::KernelSpace,
         )
     }
 }

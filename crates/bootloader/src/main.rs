@@ -15,26 +15,24 @@ use crate::{
 };
 use alloc::{
     borrow::Cow,
+    string::ToString,
     vec,
 };
-use core::ffi::c_void;
 use libcpu::{
-    cpuid::get_cpu_features,
+    cpuid::{
+        request_cpu_vendor,
+        CPUFeature,
+    },
     gdt::{
         GDTDescriptor,
         GlobalDescriptorTable,
     },
     halt_cpu,
     idt::{
-        Exception,
-        GateType,
-        IDTDescriptor,
         InterruptDescriptorTable,
         InterruptStackFrame,
     },
-    DescriptorTable,
     PrivilegeLevel,
-    SegmentSelector,
 };
 use log::{
     info,
@@ -75,6 +73,8 @@ fn main(_image_handle: Handle, mut system_table: SystemTable<Boot>) -> Status {
 
     // Run bootloader
     info!("Welcome to OverflowOS Bootloader v{}", env!("CARGO_PKG_VERSION"));
+    info!("Vendor: {}", request_cpu_vendor().to_string());
+    halt_cpu();
 
     // Initialize Simple FileSystem
     let mut file_system = SimpleFileSystemProvider::new()
