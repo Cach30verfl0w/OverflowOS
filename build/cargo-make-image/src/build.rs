@@ -2,7 +2,7 @@ use crate::{
     command::run_command,
     error::Error,
     find_in_path,
-    image_generator::ImageGenerator,
+    image::ImageGenerator,
     Arguments,
 };
 use cargo_toml::Manifest;

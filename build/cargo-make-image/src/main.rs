@@ -4,7 +4,7 @@ pub mod arch;
 pub mod build;
 pub mod command;
 pub mod error;
-pub mod image_generator;
+pub mod image;
 
 use crate::{
     arch::Architecture,
@@ -51,6 +51,7 @@ where
 }
 
 #[derive(Parser, Debug)]
+#[command(author, version)]
 pub struct Arguments {
     /// The name of the image (inclusive .img) for the generation of the image and ISO file
     #[arg(long, default_value = "overflow.img")]
@@ -113,7 +114,7 @@ fn main() {
         "Rust".color(Color::Orange3),
         "UEFI".red()
     );
-
+    info!("            Developed by {}", "Cach30verfl0w".gradient(Color::Red));
     // Get arguments, configure logger and get target architecture
     let args = Arguments::parse();
     log::set_max_level(args.level.unwrap_or(Level::Info).to_level_filter());
@@ -192,7 +193,7 @@ fn main() {
                 "-cdrom",
                 "-cpu",
                 "max",
-                args.iso_file,
+                &args.iso_file,
                 "-m",
                 "512",
             ],

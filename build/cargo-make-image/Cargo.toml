@@ -1,6 +1,6 @@
 [package]
 name = "make-image"
-description = "Cargo subcommand?"
+description = "Tooling for the creation of bootable images for Operating Systems"
 categories = ["memory-management", "no-std", "embedded"]
 version = "1.0.0-dev.1"
 
