@@ -512,7 +512,10 @@ pub enum Exception {
     ///
     /// **- Error Code: No**
     ///
-    /// TODO: Read the AMD Architecture Programmer's Manual for more information and write more docs
+    /// The Hypervisor Injection Exception refers to specific behaviors and exceptions that occur
+    /// when a hypervisor attempts certain operations in a virtualized environment, particularly
+    /// within the context of AMD Secure Encrypted Virtualization (SEV) and Secure Nested Paging
+    /// (SNP) technology.
     ///
     /// # See also
     /// - [AMD64 Architecture Programmer's Manual Volume 2](https://www.amd.com/content/dam/amd/en/documents/processor-tech-docs/programmer-references/24593.pdf)
@@ -524,9 +527,7 @@ pub enum Exception {
     /// This exception occurs when an SEV-ES enabled guest is running and a NAE event occurs. (This
     /// fault is only available on AMD CPUs with AMD SEV-ES)
     ///
-    /// TODO: Read the AMD Architecture Programmer's Manual for more information and write more docs
-    ///
-    /// **- Error Code: Yes**
+    /// **- Error Code: Yes (Equal to the VMEXIT code)**
     ///
     /// # See also
     /// - [AMD64 Architecture Programmer's Manual Volume 2](https://www.amd.com/content/dam/amd/en/documents/processor-tech-docs/programmer-references/24593.pdf)
@@ -535,12 +536,11 @@ pub enum Exception {
     /// Chapter 15.35.5 by [Advanced Micro Devices, Inc.](https://www.amd.com/en.html)
     VMMCommunication = 0x1D,
 
-    /// This exception occurs when security-sensitive events under SVM are occurring (This fault is
-    /// only available on AMD CPUs with AMD-V (I think so))
+    /// This exception occurs when security-sensitive events under SVM are occurring. The current
+    /// only use for this exception is to send external INITS into an exception so the VMM can
+    /// destroy sensitive information. (This fault is only available on AMD CPUs with AMD-V)
     ///
-    /// TODO: Read the AMD Architecture Programmer's Manual for more information and write more docs
-    ///
-    /// **- Error Code: Yes**
+    /// **- Error Code: Yes (Currently only 1 is defined)**
     ///
     /// # See also
     /// - [AMD64 Architecture Programmer's Manual Volume 2](https://www.amd.com/content/dam/amd/en/documents/processor-tech-docs/programmer-references/24593.pdf)
