@@ -57,8 +57,15 @@
 //! - [x86 Handling Exceptions](https://hackernoon.com/x86-handling-exceptions-lds3uxc) by
 //! [HackerNoon.com](https://hackernoon.com/)
 
-use core::arch::asm;
-use crate::{MemoryAddress, SegmentSelector};
+use crate::{
+    DescriptorTablePointer,
+    MemoryAddress,
+    SegmentSelector,
+};
+use core::{
+    arch::asm,
+    mem::size_of,
+};
 
 /// This enum describes the types of gates that interrupt descriptors are able to represent. I don't
 /// included the Task Gate, because that Gate can lead into a GP exception or is poorly optimized or
@@ -80,7 +87,7 @@ pub enum GateType {
 
     /// Trap gates are used to handle exception. Gate types are not automatically deactivating and
     /// reactivating interrupts.
-    Trap = 0xF
+    Trap = 0xF,
 }
 
 // TODO: Add more documentation and references to InterruptStackFrame
@@ -94,11 +101,10 @@ pub struct InterruptStackFrame {
     pub code_segment: u64,
     pub cpu_flags: u64,
     pub stack_pointer: MemoryAddress,
-    pub stack_segment: u64
+    pub stack_segment: u64,
 }
 
 impl InterruptStackFrame {
-
     /// This function calls the iretq instruction to recover the CPU state
     #[inline(always)]
     pub unsafe fn recover(&self) -> ! {
@@ -119,7 +125,6 @@ impl InterruptStackFrame {
             options(noreturn)
         )
     }
-
 }
 
 /// This structure represents all available vector indexes of exceptions, provided by the
@@ -364,7 +369,7 @@ pub enum Exception {
     /// - Writing a 1 in a reserved register field or  writing invalid value combinations
     /// - Referencing or accessing null-descriptors
     ///
-    /// **- Error: The segment selector ndex when the exception is segment related. In every other
+    /// **- Error: The segment selector index when the exception is segment related. In every other
     /// case zero**
     ///
     /// # See also
@@ -408,10 +413,11 @@ pub enum Exception {
     /// # See also
     /// - [Exceptions](https://wiki.osdev.org/Exceptions#Alignment_Check) by
     /// [OSDev.org](https://wiki.osdev.org/)
-    AlignmentCheck  = 0x17,
+    AlignmentCheck = 0x17,
 
     /// This exception occurs when the processor detects internal errors, lik bad memory, bus errors
-    /// etc. The value of the saved instruction pointer depends on the implementation and the exception.
+    /// etc. The value of the saved instruction pointer depends on the implementation and the
+    /// exception.
     ///
     /// **- Error Code: No**
     ///
@@ -455,13 +461,13 @@ pub enum Exception {
     /// - Bit 14:0
     ///    - 1 => Indicates the exception was caused near a RET instruction
     ///    - 2 => Indicates the exception was caused by a FAR RET or IRET instruction
-    ///    - 3 => Indicates the exception was caused due to missing ENDBRANCH at target of an
+    ///    - 3 => Indicates the exception was caused due to missing `ENDBRANCH` at target of an
     ///    indirect call or jump instruction
     ///    - 4 => Indicates the exception was caused by a show-stack-restore token check failure
-    ///    in the RSTORSSP instruction
+    ///    in the `RSTORSSP` instruction
     ///    - 5 => Indicates the exception was caused by a supervisor shadow stack token check
-    ///    failure in th SETSSBSY instruction
-    /// - Bit 15 of the error code, if set to 1, indicates the exception occured during enclave
+    ///    failure in th `SETSSBSY` instruction
+    /// - Bit 15 of the error code, if set to 1, indicates the exception occurred during enclave
     /// exception.
     ///
     /// # See also
@@ -511,7 +517,7 @@ pub enum Exception {
     /// Chapter 8.2.23 by [Advanced Micro Devices, Inc.](https://www.amd.com/en.html)
     /// - [AMD64 Architecture Programmer's Manual Volume 2](https://www.amd.com/content/dam/amd/en/documents/processor-tech-docs/programmer-references/24593.pdf)
     /// Chapter 15.28 by [Advanced Micro Devices, Inc.](https://www.amd.com/en.html)
-    Security = 0x30
+    Security = 0x30,
 }
 
 /// This structure implements a single descriptor in the IDT (Interrupt Descriptor Table). This
@@ -558,5 +564,62 @@ pub struct IDTDescriptor {
     higher_isr_address: u32,
 
     #[cfg(target_arch = "x86_64")]
-    padding: [u8; 4]
+    padding: [u8; 4],
+}
+
+/// This structure represents the Interrupt Descriptor Table with the maximum of 256 entries. In #
+/// this structure, we store the descriptors in a slice.
+///
+/// - `descriptors` - This field is a slice that can store 8192 [IDTDescriptor]s
+/// - `count` This field holds the max index that is used to insert a descriptor for the
+/// [DescriptorTablePointer]
+///
+/// # See also
+/// - [Interrupt Descriptor Table](https://wiki.osdev.org/IDT) by
+/// [OSDev.org](https://wiki.osdev.org)
+/// - [Interrupts Tutorial](https://wiki.osdev.org/Interrupts_tutorial) by
+/// [OSDev.org](https://wiki.osdev.org)
+/// - [IDTDescriptor] (Source Code)
+#[derive(Clone, Copy, Ord, PartialOrd, Eq, PartialEq, Debug, Hash)]
+pub struct InterruptDescriptorTable {
+    descriptors: [IDTDescriptor; 256],
+    count: usize,
+}
+
+impl Default for InterruptDescriptorTable {
+    #[must_use]
+    fn default() -> Self {
+        Self {
+            descriptors: [IDTDescriptor::default(); 256],
+            count: 0,
+        }
+    }
+}
+
+impl InterruptDescriptorTable {
+    /// This function generates a pointer to the IDT with the [InterruptDescriptorTable::as_ptr]
+    /// function and loads it with the `lidt` instruction.
+    ///
+    /// # See also
+    /// - [LGDT/LIDT](https://www.felixcloutier.com/x86/lgdt:lidt) by
+    /// [Felix Clountier](https://www.felixcloutier.com)
+    pub fn load(&self) {
+        unsafe {
+            asm!("lidt [{}]", in(reg) &self.as_ptr(), options(readonly, nostack, preserves_flags));
+        }
+    }
+
+    /// This function generates a pointer to the Interrupt Descriptor Table (IDT) with the base
+    /// address and the size of the IDT as limit.
+    ///
+    /// # See also
+    /// - [Global Descriptor Table](https://wiki.osdev.org/Global_Descriptor_Table#GDTR) by
+    /// [OSDev.org](https://wiki.osdev.org)
+    #[must_use]
+    pub fn as_ptr(&self) -> DescriptorTablePointer {
+        DescriptorTablePointer {
+            base: self.descriptors.as_ptr() as MemoryAddress,
+            size: (self.count * size_of::<IDTDescriptor>() - 1) as u16,
+        }
+    }
 }

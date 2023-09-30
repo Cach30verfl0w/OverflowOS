@@ -8,8 +8,13 @@
 //! The following code example creates an empty descriptor table, generates a descriptor for a kernel
 //! level code and data segment. Then we tell the CPU to load that.
 //! ```rust
-//! use libcpu::gdt::{GDTDescriptor, GlobalDescriptorTable};
-//! use libcpu::PrivilegeLevel;
+//! use libcpu::{
+//!     gdt::{
+//!         GDTDescriptor,
+//!         GlobalDescriptorTable,
+//!     },
+//!     PrivilegeLevel,
+//! };
 //!
 //! let mut global_descriptor_table = GlobalDescriptorTable::default();
 //! global_descriptor_table.insert(1, GDTDescriptor::code_segment(PrivilegeLevel::KernelSpace));
@@ -20,14 +25,19 @@
 //! # See also
 //! [x86_64](https://wiki.osdev.org/X86-64) by [OSDev](https://wiki.osdev.org)
 
+pub mod cpuid;
 pub mod gdt;
 pub mod idt;
-pub mod cpuid;
 
-use core::arch::asm;
-use core::fmt::{Display, Formatter};
-use bit_field::BitField;
 use crate::MemoryAddress;
+use bit_field::BitField;
+use core::{
+    arch::asm,
+    fmt::{
+        Display,
+        Formatter,
+    },
+};
 
 /// This structure represents the privilege level for the descriptor. x86 and x86_64 CPUs are
 /// providing a few rings, but only 2 are used in Production-ready operating systems.
@@ -103,7 +113,7 @@ impl From<u16> for PrivilegeLevel {
             0x1 => Self::Ring1,
             0x2 => Self::Ring2,
             0x4 => Self::UserSpace,
-            _ => panic!("Invalid privilege level {}", value)
+            _ => panic!("Invalid privilege level {}", value),
         }
     }
 }
@@ -138,7 +148,7 @@ pub enum DescriptorTable {
     /// # See also
     /// - [Local Descriptor Table](https://wiki.osdev.org/Local_Descriptor_Table) by
     /// [OSDev.org](https://wiki.osdev.org/)
-    LDT = 0b1000
+    LDT = 0b1000,
 }
 
 /// This code just implements the Display trait into the descriptor table over the Debug trait.
@@ -155,7 +165,7 @@ impl From<bool> for DescriptorTable {
     fn from(value: bool) -> Self {
         match value {
             false => Self::GDT,
-            true => Self::LDT
+            true => Self::LDT,
         }
     }
 }
@@ -167,7 +177,7 @@ impl From<DescriptorTable> for bool {
     fn from(value: DescriptorTable) -> Self {
         match value {
             DescriptorTable::GDT => false,
-            DescriptorTable::LDT => true
+            DescriptorTable::LDT => true,
         }
     }
 }
@@ -185,7 +195,6 @@ impl From<DescriptorTable> for bool {
 pub struct SegmentSelector(u16);
 
 impl SegmentSelector {
-
     /// This function creates the segment selector by the single values of the entry index, type of
     /// the table and the privilege level of the selector.
     ///
@@ -268,7 +277,6 @@ impl SegmentSelector {
     pub fn index(&self) -> u16 {
         self.0 >> 3
     }
-
 }
 
 /// This structure represents the pointer structure to a descriptor table like the GDT or IDT. These
@@ -304,7 +312,7 @@ pub struct DescriptorTablePointer {
     /// [OSDev.org](https://wiki.osdev.org)
     /// - [Interrupt Descriptor Table](https://wiki.osdev.org/Interrupt_Descriptor_Table#IDTR) by
     /// [OSDev.org](https://wiki.osdev.org)
-    pub size: u16
+    pub size: u16,
 }
 
 /// This function implements the halt (`hlt`) instruction as a platform-independent function. The

@@ -9,5 +9,5 @@ imports_granularity = "Crate"
 # Widths
 comment_width = 102
 max_width = 102
-fn_call_width = 102
+fn_call_width = 100
 inline_attribute_width = 50

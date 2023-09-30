@@ -191,8 +191,7 @@ fn main() {
                 &args.ovmf_path,
                 "-cdrom",
                 "-cpu",
-                "max"
-                &args.iso_file,
+                "max" & args.iso_file,
                 "-m",
                 "512",
             ],

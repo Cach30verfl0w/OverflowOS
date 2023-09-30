@@ -40,8 +40,13 @@
 //! # Examples
 //! The following examples shows the creation of a basic GDT for a Ring 0 only system.
 //! ```rust
-//! use libcpu::gdt::{GDTDescriptor, GlobalDescriptorTable};
-//! use libcpu::PrivilegeLevel;
+//! use libcpu::{
+//!     gdt::{
+//!         GDTDescriptor,
+//!         GlobalDescriptorTable,
+//!     },
+//!     PrivilegeLevel,
+//! };
 //! let mut global_descriptor_table = GlobalDescriptorTable::default();
 //! global_descriptor_table.insert(1, GDTDescriptor::code_segment(PrivilegeLevel::KernelSpace));
 //! global_descriptor_table.insert(2, GDTDescriptor::data_segment(PrivilegeLevel::KernelSpace));
@@ -53,12 +58,17 @@
 //! - [Global Descriptor Table](https://wiki.osdev.org/Global_Descriptor_Table)
 //! by [OSDev.org](https://wiki.osdev.org)
 
-use core::arch::asm;
-use core::mem::size_of;
+use crate::{
+    x86::DescriptorTablePointer,
+    MemoryAddress,
+    PrivilegeLevel,
+};
 use bit_field::BitField;
 use bitflags::bitflags;
-use crate::{MemoryAddress, PrivilegeLevel};
-use crate::x86::{DescriptorTablePointer};
+use core::{
+    arch::asm,
+    mem::size_of,
+};
 
 bitflags! {
     /// This structure represents most of the flags for the access byte in the descriptor.
@@ -168,7 +178,6 @@ bitflags! {
 #[repr(C, packed)]
 #[derive(Clone, Copy, Ord, PartialOrd, Eq, PartialEq, Debug, Hash, Default)]
 pub struct GDTDescriptor {
-
     /// These bytes are storing the first 16 bits of the limit. (32bit only)
     lower_limit: u16,
 
@@ -179,7 +188,7 @@ pub struct GDTDescriptor {
     /// These bytes are storing the lower middle 16 bits of the base address of the section.
     /// (32bit only)
     middle_base_address: u8,
-    
+
     /// This field contains the access flags. All needed access flags are specified in
     /// [Access]. This value is supported on 32-bit and 64-bit systems.
     access: u8,
@@ -196,7 +205,7 @@ pub struct GDTDescriptor {
     /// These are bytes reserved by the CPU. These bytes are only present on x86_64 systems. There
     /// is also the "highest" base address, but the CPU doesn't use that data. (I think so)
     #[cfg(target_arch = "x86_64")]
-    reserved: u64
+    reserved: u64,
 }
 
 impl GDTDescriptor {
@@ -245,11 +254,7 @@ impl GDTDescriptor {
     #[inline]
     #[must_use]
     pub fn data_segment(level: PrivilegeLevel) -> Self {
-        Self::new(
-            level,
-            Access::PRESENT | Access::WRITABLE,
-            Flags::GRANULARITY | Flags::LONG_MODE,
-        )
+        Self::new(level, Access::PRESENT | Access::WRITABLE, Flags::GRANULARITY | Flags::LONG_MODE)
     }
 
     /// This function returns the descriptor's privilege level, set by the descriptor creator.
@@ -290,7 +295,6 @@ impl GDTDescriptor {
     pub fn flags(&self) -> Flags {
         Flags::from_bits_retain(self.flags)
     }
-
 }
 
 /// This structure represents the Global Descriptor Table with the maximum of 8192 entries. In this

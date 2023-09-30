@@ -17,7 +17,15 @@ use alloc::{
     borrow::Cow,
     vec,
 };
-use libcpu::{halt_cpu, PrivilegeLevel};
+use libcpu::{
+    cpuid::get_cpu_features,
+    gdt::{
+        GDTDescriptor,
+        GlobalDescriptorTable,
+    },
+    halt_cpu,
+    PrivilegeLevel,
+};
 use log::{
     info,
     LevelFilter,
@@ -36,8 +44,6 @@ use uefi::{
     Handle,
     Status,
 };
-use libcpu::cpuid::get_cpu_features;
-use libcpu::gdt::{GDTDescriptor, GlobalDescriptorTable};
 
 #[entry]
 fn main(_image_handle: Handle, mut system_table: SystemTable<Boot>) -> Status {

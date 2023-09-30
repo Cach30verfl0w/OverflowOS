@@ -6,8 +6,8 @@
 //! - [CPUID - CPU Identification](https://www.felixcloutier.com/x86/cpuid) by
 //! [Felix Cloutier](https://www.felixcloutier.com/)
 
-use core::arch::x86_64::__cpuid;
 use bitflags::bitflags;
+use core::arch::x86_64::__cpuid;
 
 // TODO: Document every feature
 
