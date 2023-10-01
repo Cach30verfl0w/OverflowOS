@@ -265,7 +265,8 @@ features! {
     pub enum CPUFeature {
         /// SSE3 (Streaming SIMD Extensions 3) is a instruction set extension for IA-32 that
         /// provides instructions for 512-bit registers and operation with 512-bit data in one
-        /// instruction. SSE3 is used to optimize algorithm for bigger data.
+        /// instruction. SSE3 is used to optimize algorithm for bigger data. SSE3 is based on SSE
+        /// and only adds more instructions.
         ///
         /// # See also
         /// - [SSE3](https://en.wikipedia.org/wiki/SSE3) by [Wikipedia](https://en.wikipedia.org)
@@ -566,20 +567,90 @@ features! {
 
         /// This feature is a functionality in the x86 architecture to set attributes for memory
         /// pages. So we can control the characteristics of pages in virtual memory.
+        ///
+        /// # See also
+        /// [Page Attribute Table](https://en.wikipedia.org/wiki/Page_attribute_table) by
+        /// [Wikipedia](https://en.wikipedia.org)
         PAT         (edx, "Page Attribute Table") = 1 << 16,
+
+        /// This feature that expands the physical address space from 32 bit to 36 bit. Before
+        /// that feature, the physical address space has a size of 4 gigabytes. With this feature
+        /// the system is allowed to address 64 gigabytes of memory.
+        ///
+        /// # See also
+        /// - [PSE-36 (36-bit Page Size Extension)](https://en.wikipedia.org/wiki/PSE-36) by
+        /// [Wikipedia](https://en.wikipedia.org)
         PSE36       (edx, "36-bit Page Size Extension") = 1 << 17,
+
+        /// This feature allows to identify a physical processor with a unique serial number. This
+        /// function was disabled by Intel after some criticism, due to the privacy of that feature.
+        ///
+        /// # See also
+        /// - [Pentium III Privacy Issues](https://en.wikipedia.org/wiki/Pentium_III#Controversy_about_privacy_issues)
+        /// by [Wikipedia](https://en.wikipedia.org)
         PSN         (edx, "Processor Serial Number enabled") = 1 << 18,
+
+        /// This feature allows co flush a cache line.
         CLFLUSH     (edx, "CLFLUSH cache line flush instruction") = 1 << 19,
+
+        /// This feature indicates that the Non-Executable Bit is supported by the CPU. The
+        /// Non-Executable Bit is a security mechanism to mark a memory section as non-executable
+        /// to prevent the abuse of Memory Corruptions in applications or systems.
+        ///
+        /// - [Non-Executable Bit](https://en.wikipedia.org/wiki/NX_bit) by
+        /// [Wikipedia](https://en.wikipedia.org)
         NX          (edx, "Non-Executable Bit (Itanium only)") = 1 << 20,
+
+        /// This feature provides the functionality to save trace information of jumps. So you can
+        /// trace the flow of the program.
         DS          (edx, "Debug Store (Save trace of jumps)") = 1 << 21,
+
+        /// This feature provides some model-specific registers for the Thermal Control of the
+        /// processor.
         ACPI        (edx, "Onboard Thermal Control MSRs for ACPI") = 1 << 22,
+
+        /// MX is a SIMD extension for the x86 instruction set. This extension provides the
+        /// functionality to perform 64-bit operations on 64-bit registers.
+        ///
+        /// # See also
+        /// - [MMX (Instruction Set)](https://en.wikipedia.org/wiki/MMX_(instruction_set)) by
+        /// [Wikipedia](https://en.wikipedia.org)
         MMX         (edx, "MMX instructions (64-bit SIMD)") = 1 << 23,
+
+        /// This feature provides two instructions as a part of SSE to store and restore the state
+        /// of the FPU.
         FXSR        (edx, "FXSAVE and FXRSTOR instructions") = 1 << 24,
+
+        /// SSE (Streaming SIMD Extensions) is a instruction set extension for IA-32 that
+        /// provides instructions for 512-bit registers and operation with 512-bit data in one
+        /// instruction. SSE3 is used to optimize algorithm for bigger data.
+        ///
+        /// # See also
+        /// - [Streaming SIMD Extensions](https://en.wikipedia.org/wiki/Streaming_SIMD_Extensions) by
+        /// [Wikipedia](https://en.wikipedia.org)
         SSE         (edx, "Streaming SIMD Extensions (128-bit SIMD)") = 1 << 25,
+
+        /// SSE2 (Streaming SIMD Extensions 2) is a instruction set extension for IA-32 that
+        /// provides instructions for 512-bit registers and operation with 512-bit data in one
+        /// instruction. SSE3 is used to optimize algorithm for bigger data. SSE2 is based on SSE
+        /// and only adds more instructions.
+        ///
+        /// # See also
+        /// - [Streaming SIMD Extensions](https://en.wikipedia.org/wiki/Streaming_SIMD_Extensions) by
+        /// [Wikipedia](https://en.wikipedia.org)
         SSE2        (edx, "SSE2 instructions") = 1 << 26,
         SS          (edx, "CPU Cache implements self-snoop") = 1 << 27,
         HTT         (edx, "Mac APIC IDs reserved field is valid") = 1 << 28,
+
+        /// This feature monitors the temperature of the processor and add protection mechanisms
+        /// to prevent CPU damage by heat.
         TM          (edx, "Thermal Monitor automatically limits temperature") = 1 << 29,
+
+        /// This feature implements the functionality to IA-64 processors to emulate x86 code. This
+        /// feature tries to convert x86 instructions to IA-64 instructions.
+        ///
+        /// # See also
+        /// - [IA-64](https://en.wikipedia.org/wiki/IA-64) by [Wikipedia](https://en.wikipedia.org)
         IA64        (edx, "IA64 Processor emulating x86") = 1 << 30,
         PBE         (edx, "Pending Break Enable wakeup capacity") = 1 << 31
     }
