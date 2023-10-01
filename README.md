@@ -9,7 +9,7 @@ OverflowOS is a UEFI-based Operating System with a monolithic Kernel, fully writ
 </div>
 
 ## Current project packages
-- [`make-image`](https://github.com/Cach30verfl0w/OverflowOS/tree/main/build/cargo-make-image) - Tooling to generate the ISO file from projects like this (by [Cach30verfl0w](https://github.com/Cach30verfl0w))
+- [`OSImage`](https://github.com/Cach30verfl0w/OSImage) -  Command-Line Tool to generate image files for Rust Operating Systems (by [Cach30verfl0w](https://github.com/Cach30verfl0w))
 - [`kernel`](https://github.com/Cach30verfl0w/OverflowOS/tree/main/crates/kernel) - The original monolithic Kernel of OverflowOS (by [Cach30verfl0w](https://github.com/Cach30verfl0w))
 - [`bootloader`](https://github.com/Cach30verfl0w/OverflowOS/tree/main/crates/bootloader) - The original UEFI-based bootloader of OverflowOS (by [Cach30verfl0w](https://github.com/Cach30verfl0w))
 - [`libcpu`](https://github.com/Cach30verfl0w/OverflowOS/tree/main/crates/libcpu) - The library for the implementation of architecture-specific CPU features (by [Cach30verfl0w](https://github.com/Cach30verfl0w))
