@@ -362,11 +362,11 @@ features! {
         /// [Wikipedia](https://en.wikipedia.org)
         FMA         (ecx, "Fused Multiply-Add (FMA3)") = 1 << 12,
 
-        /// This feature implements the CMPXCHG1B (Compare and exchange 8 bytes), that is used to
+        /// This feature implements the CMPXCHG16B (Compare and exchange 86 bytes), that is used to
         /// provide atomicity in operations on memory. This instruction is particularly used in
         /// critical code sections, where the integrity must be ensured. So with this instruction
         /// the programmer can avoid bugs like Race Conditions.
-        CX16        (ecx, "CMPXCHG1B instruction") = 1 << 13,
+        CX16        (ecx, "CMPXCHG16B instruction") = 1 << 13,
         XTPR        (ecx, "Can disable sending task priority messages") = 1 << 14,
         PDCM        (ecx, "Prefmon & Debug Capability") = 1 << 15,
         PCID        (ecx, "Process Context Identifiers") = 1 << 17,
@@ -461,21 +461,111 @@ features! {
         /// always zero on physical CPUs)
         HYPERVISOR  (ecx, "Hypervisor is present") = 1 << 31,
 
+        /// This feature indicates that the system is supporting a FPU. All modern CPUs are providing
+        /// a on-board FPU Support.
         FPU         (edx, "Onboard x87 FPU") = 1 << 0,
+
+        /// This feature provides the functionality to execute old 16-bit x86 applications in a
+        /// virtual environment.
+        ///
+        /// # See also
+        /// - [Virtual 8086 Mode Extensions](https://en.wikipedia.org/wiki/Virtual_8086_mode#Virtual_8086_mode_enhancements_.28VME.29)
+        /// by [Wikipedia](https://en.wikipedia.org)
         VME         (edx, "Virtual 8086 Mode Extensions") = 1 << 1,
+
+        /// This feature provides the functionality for hardware support for the I/O management under
+        /// virtual environments on the system.
         DE          (edx, "Debugging Extensions") = 1 << 2,
+
+        /// This feature provides the functionality to request pages that are larger than the
+        /// traditional 4 KiB bytes.
+        ///
+        /// # See also
+        /// - [Page Size Extension](https://en.wikipedia.org/wiki/Page_Size_Extension) by
+        /// [Wikipedia](https://en.wikipedia.org)
         PSE         (edx, "Page Size Extension (4MB pages)") = 1 << 3,
+
+        /// This feature provides the `RDTSC` instruction to read the Time Stamp Counter of the
+        /// processor.
+        ///
+        /// # See also
+        /// - [Time Stamp Counter](https://en.wikipedia.org/wiki/Time_Stamp_Counter) by
+        /// [Wikipedia](https://en.wikipedia.org)
         TSC         (edx, "Time Stamp Counter and RDTSC instruction") = 1 << 4,
+
+        /// This feature allows the programmer to use model-specific register of the CPU. That can
+        /// be used for vendor-specific operations, monitoring or debugging.
+        ///
+        /// # See also
+        /// - [Model-specific register](https://en.wikipedia.org/wiki/Model-specific_register) by
+        /// [Wikipedia](https://en.wikipedia.org)
         MSR         (edx, "Model-Specific Registers and RDMSR/WRMSR instructions") = 1 << 5,
+
+        /// This feature that expands the physical address space from 32 bit to 36 bit. Before
+        /// that feature, the physical address space has a size of 4 gigabytes. With this feature
+        /// the system is allowed to address 64 gigabytes of memory.
+        ///
+        /// # See also
+        /// - [Physical Address Extension](https://en.wikipedia.org/wiki/Physical_Address_Extension)
+        /// by [Wikipedia](https://en.wikipedia.org)
         PAE         (edx, "Physical Address Extension") = 1 << 6,
-        MCE         (edx, "Machine Check Exception") = 1 << 7,
+
+        /// This feature allows the system to recognize and handle machine check exceptions over the
+        /// IDT. So we can use the exception [crate::idt::Exception::MachineCheck] to handle them.
+        ///
+        /// # See also
+        /// - [Machine-Check Exception](https://en.wikipedia.org/wiki/Machine-check_exception) by
+        /// [Wikipedia](https://en.wikipedia.org)
+        MCE         (edx, "Machine-Check Exception") = 1 << 7,
+
+        /// This feature implements the CMPXCHG1B (Compare and exchange 8 bytes), that is used to
+        /// provide atomicity in operations on memory. This instruction is particularly used in
+        /// critical code sections, where the integrity must be ensured. So with this instruction
+        /// the programmer can avoid bugs like Race Conditions.
         CX8         (edx, "CMPXCHG8B instruction") = 1 << 8,
+
+        /// This feature indicates that the system is supporting a APIC. All modern CPUs are
+        /// providing a on-board APIC Support.
+        ///
+        /// # See also
+        /// - [Advanced Programmable Interrupt Controller](https://en.wikipedia.org/wiki/Advanced_Programmable_Interrupt_Controller)
+        /// by [Wikipedia](https://en.wikipedia.org)
         APIC        (edx, "Onboard APIC") = 1 << 9,
+
+        /// This feature provides two x86 instructions to make system calls more efficient. With
+        /// the `SYSENTER` instruction, you can change from the user mode to the kernel mode. With
+        /// the `SYSEXIT` instruction, you can change back from the kernel mode to the user mode.
         SEP         (edx, "SYSENTER and SYSEXIT fast System Call instuctions") = 1 << 11,
+
+        /// This feature provides a few registers to configure and control the access of specific
+        /// memory segments. So you can control the memory caching or memory types like Write-Back
+        /// or Write-Through.
+        ///
+        /// # See also
+        /// - [Memory Type Range Regiseter](https://en.wikipedia.org/wiki/Memory_type_range_register)
+        /// by [Wikipedia](https://en.wikipedia.org)
         MTRR        (edx, "Memory Type Range Registers") = 1 << 12,
+
+        /// This feature provides a control bit in the CR4 register to control the paging mechanism
+        /// in the processor. So you can use global pages (Global pages are accessible by all
+        /// processors)
         PGE         (edx, "Page Global Enable bit") = 1 << 13,
+
+        /// The machine check architecture are a few mechanisms and specifications in the x86
+        /// architecture to detect machine check errors. With this feature, the CPU tries to
+        /// improve the reliability of computer systems.
+        ///
+        /// # See also
+        /// - [Machine Check Architecture](https://en.wikipedia.org/wiki/Machine_Check_Architecture)
+        /// by [Wikipedia](https://en.wikipedia.org)
         MCA         (edx, "Machine Check Architecture") = 1 << 14,
+
+        /// This feature implements a few instructions ike CMOV to conditionally move data from one
+        /// register to the other register.
         CMOV        (edx, "Conditional move instructions") = 1 << 15,
+
+        /// This feature is a functionality in the x86 architecture to set attributes for memory
+        /// pages. So we can control the characteristics of pages in virtual memory.
         PAT         (edx, "Page Attribute Table") = 1 << 16,
         PSE36       (edx, "36-bit Page Size Extension") = 1 << 17,
         PSN         (edx, "Processor Serial Number enabled") = 1 << 18,
