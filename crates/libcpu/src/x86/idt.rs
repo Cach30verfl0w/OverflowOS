@@ -70,7 +70,7 @@ use core::{
     mem::size_of,
 };
 
-extern "x86-interrupt" fn default_interrupt_handler(stack_frame: &mut InterruptStackFrame) {
+extern "x86-interrupt" fn default_interrupt_handler(_stack_frame: &mut InterruptStackFrame) {
     halt_cpu();
 }
 

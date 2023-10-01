@@ -18,19 +18,13 @@ use alloc::{
     string::ToString,
     vec,
 };
-use libcpu::{
-    cpuid::request_cpu_vendor,
-    gdt::{
-        GDTDescriptor,
-        GlobalDescriptorTable,
-    },
-    halt_cpu,
-    idt::{
-        InterruptDescriptorTable,
-        InterruptStackFrame,
-    },
-    PrivilegeLevel,
-};
+use libcpu::{cpuid::request_cpu_vendor, DescriptorTable, gdt::{
+    GDTDescriptor,
+    GlobalDescriptorTable,
+}, halt_cpu, idt::{
+    InterruptDescriptorTable,
+    InterruptStackFrame,
+}, PrivilegeLevel, SegmentSelector};
 use log::{
     info,
     LevelFilter,
@@ -49,8 +43,9 @@ use uefi::{
     Handle,
     Status,
 };
+use libcpu::idt::{Exception, GateType, IDTDescriptor};
 
-extern "x86-interrupt" fn test_interrupt(stack_frame: &mut InterruptStackFrame) {
+extern "x86-interrupt" fn test_interrupt(_stack_frame: &mut InterruptStackFrame) {
     halt_cpu();
 }
 
@@ -71,7 +66,6 @@ fn main(_image_handle: Handle, mut system_table: SystemTable<Boot>) -> Status {
     // Run bootloader
     info!("Welcome to OverflowOS Bootloader v{}", env!("CARGO_PKG_VERSION"));
     info!("Vendor: {}", request_cpu_vendor().to_string());
-    halt_cpu();
 
     // Initialize Simple FileSystem
     let mut file_system = SimpleFileSystemProvider::new()
@@ -84,7 +78,7 @@ fn main(_image_handle: Handle, mut system_table: SystemTable<Boot>) -> Status {
         .unwrap_or_else(|err| panic!("Unable to open own volume: {}", err));
 
     let mut file = file_system
-        .open_file(0, Cow::Borrowed("KERNEL.ELF"), FileMode::Read)
+        .open_file(0, Cow::Borrowed("EFI\\BOOT\\KERNEL.ELF"), FileMode::Read)
         .unwrap_or_else(|err| panic!("Unable to open Kernel as file: {}", err));
 
     // Read kernel
@@ -96,9 +90,9 @@ fn main(_image_handle: Handle, mut system_table: SystemTable<Boot>) -> Status {
         .unwrap_or_else(|err| panic!("Unable to read Kernel as file: {}", err));
 
     // Parse as ELF file
-    let function = parse_elf_file(file_buffer.as_slice())
+    let _entrypoint_function = parse_elf_file(file_buffer.as_slice())
         .unwrap_or_else(|err| panic!("Unable to load Kernel: {}", err));
-    let (runtime_services, memory_map) = system_table.exit_boot_services();
+    let (_runtime_services, _memory_map) = system_table.exit_boot_services();
 
     let mut global_descriptor_table = GlobalDescriptorTable::default();
     global_descriptor_table.insert(1, GDTDescriptor::code_segment(PrivilegeLevel::KernelSpace));
@@ -106,7 +100,7 @@ fn main(_image_handle: Handle, mut system_table: SystemTable<Boot>) -> Status {
     global_descriptor_table.load();
 
     let mut interrupt_descriptor_table = InterruptDescriptorTable::default();
-    /*interrupt_descriptor_table.insert(
+    interrupt_descriptor_table.insert(
         Exception::Division as usize,
         IDTDescriptor::new(
             (test_interrupt as *const ()) as u64,
@@ -114,7 +108,7 @@ fn main(_image_handle: Handle, mut system_table: SystemTable<Boot>) -> Status {
             GateType::Trap,
             PrivilegeLevel::KernelSpace,
         ),
-    );*/
+    );
     interrupt_descriptor_table.load();
     return Status::SUCCESS;
 }
