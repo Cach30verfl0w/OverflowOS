@@ -361,23 +361,104 @@ features! {
         /// - [FMA Instruction Set](https://en.wikipedia.org/wiki/FMA_instruction_set) by
         /// [Wikipedia](https://en.wikipedia.org)
         FMA         (ecx, "Fused Multiply-Add (FMA3)") = 1 << 12,
+
+        /// This feature implements the CMPXCHG1B (Compare and exchange 8 bytes), that is used to
+        /// provide atomicity in operations on memory. This instruction is particularly used in
+        /// critical code sections, where the integrity must be ensured. So with this instruction
+        /// the programmer can avoid bugs like Race Conditions.
         CX16        (ecx, "CMPXCHG1B instruction") = 1 << 13,
         XTPR        (ecx, "Can disable sending task priority messages") = 1 << 14,
         PDCM        (ecx, "Prefmon & Debug Capability") = 1 << 15,
         PCID        (ecx, "Process Context Identifiers") = 1 << 17,
+
+        /// This feature provides the functionality, that DMA (Direct Memory Access) operations can
+        /// write the cache without involving the CPU. That improves the efficiency of DMA
+        /// operations.
         DCA         (ecx, "Direct Cache Access for DMA writes") = 1 << 18,
+
+        /// SSE 4.1 is an extension for the x86 instruction set (developed by Intel) that adds
+        /// string and text processing instructions, the CRC32 instruction and the Dot-Product
+        /// instruction to the available instruction set.
+        ///
+        /// # See also
+        /// - [SSE4](https://en.wikipedia.org/wiki/SSE4#SSE4.1) by
+        /// [Wikipedia](https://en.wikipedia.org)
         SSE4_1      (ecx, "SSE4.1 instructions") = 1 << 19,
+
+        /// SSE 4.2 is an extension for the s86 instruction set (developed by Intel) that adds
+        /// string compare instructions, pattern searching instructions, gather and scatter
+        /// instructions.
+        ///
+        /// # See also
+        /// - [SSE4](https://en.wikipedia.org/wiki/SSE4#SSE4.2) by
+        /// [Wikipedia](https://en.wikipedia.org)
         SSE4_2      (ecx, "SSE4.2 instructions") = 1 << 20,
+
+        /// Enhanced APIC is a extension for the APIC (Advanced Programmable Interrupt Controller)
+        /// in modern processors. This extension provides the functionality to add more interrupt
+        /// vectors, a direct register-addressing, more scalability and more security functionality.
+        ///
+        /// # See also
+        /// - [Advanced Programmable Interrupt Controller](https://en.wikipedia.org/wiki/Advanced_Programmable_Interrupt_Controller#X2APIC)
+        /// by [Wikipedia](https://en.wikipedia.org)
         X2APIC      (ecx, "x2APIC (enhanced APIC)") = 1 << 21,
+
+        /// The MOVBE instruction is used to swap the byte order of a 16-bit or 32-bit data
+        /// operand. It's useful in situations where data is begin transferred between systems
+        /// with different endianness.
         MOVBE       (ecx, "MOVBE instruction") = 1 << 22,
+
+        /// This instruction counts all bits in 32-bit or 64-bit data, which are set to 1. The result
+        /// is stored in the destination register.
         POPCNT      (ecx, "POPCNT instruction") = 1 << 23,
+
+        /// With this feature, you can configure the APIC to execute a one-shot operation using a
+        /// TSC-deadline to control the timing of the event.
         TSCDeadline (ecx, "APIC implements one-shot operation using a TSC deadline value") = 1 << 24,
+
+        /// This feature provides hardware acceleration for the Advanced Encryption Standard/AES
+        /// (Rijndael) encryption algorithm. With these instruction you can execute all rounds of
+        /// AES encryption and decryption. You also have assistant instruction to expand or generate
+        /// a key.
+        ///
+        /// # See also
+        /// - [AES Instruction Set](https://en.wikipedia.org/wiki/AES_instruction_set) by
+        /// [Wikipedia](https://en.wikipedia.org)
         AES         (ecx, "Hardware-accelerated AES Instruction Set") = 1 << 25,
+
+        /// This feature provides four instructions to restore and save extended processor
+        /// states. These instruction can be used by Operating Systems during context
+        /// switching.
         XSAVE       (ecx, "Extensible processor state restore instructions") = 1 << 26,
+
+        /// This feature shows that the operating system has the capability to support this
+        /// instruction.
         OSXSAVE     (ecx, "XSAVE enabled by OS") = 1 << 27,
+
+        /// The Advanced Vector Extensions (AVX) provides SIMD instructions for operations on
+        /// 256-bit registers.
+        ///
+        /// # See also
+        /// - [Advanced Vector Extensions](https://en.wikipedia.org/wiki/Advanced_Vector_Extensions)
+        /// by [Wikipedia](https://en.wikipedia.org)
         AVX         (ecx, "Advanced Vector Extensions (256-bit SIMD)") = 1 << 28,
+
+        /// This feature provides the functionality to convert 32-bit or 64-bit floating-point
+        /// numbers to 16-bit floating point numbers. That can provide a better performance for
+        /// Neural Network applications. It can also reduce the memory usage of the application.
         F16C        (ecx, "Floating-point conversion instructions to/from FP16 format") = 1 << 29,
-        RDRAND      (ecx, "RDRAND (HRNG) feature") = 1 << 30,
+
+        /// This feature is an extension for the x86 instruction set, that was invented by
+        /// Intel. This feature can be used to generate cryptographically-secure numbers. On Intel
+        /// processors this instruction is part of the Intel Digital Random Number Generator (DRNG)
+        ///
+        /// # See also
+        /// - [RDRAND](https://en.wikipedia.org/wiki/RDRAND) by
+        /// [Wikipedia](https://en.wikipedia.org)
+        RDRAND      (ecx, "RDRAND feature") = 1 << 30,
+
+        /// This feature indicates the presence of a Hypervisor in this environment (This bit is
+        /// always zero on physical CPUs)
         HYPERVISOR  (ecx, "Hypervisor is present") = 1 << 31,
 
         FPU         (edx, "Onboard x87 FPU") = 1 << 0,
