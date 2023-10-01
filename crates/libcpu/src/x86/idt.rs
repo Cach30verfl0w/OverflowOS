@@ -573,8 +573,7 @@ pub enum Exception {
 pub struct IDTDescriptor {
     lower_isr_address: u16,
     segment_selector: SegmentSelector,
-    ist: u8,
-    flags: u8,
+    flags: u16,
     middle_isr_address: u16,
     higher_isr_address: u32,
     reserved: u32,
@@ -597,12 +596,11 @@ impl IDTDescriptor {
         privilege_level: PrivilegeLevel,
     ) -> Self {
         Self {
-            lower_isr_address: (handler_address & 0xFFFF) as u16,
-            segment_selector: selector,
-            ist: 0,
-            flags: 0b1000_0000 | (privilege_level as u8) | (gate_type as u8),
-            middle_isr_address: ((handler_address >> 16) & 0xFFFF) as u16,
-            higher_isr_address: ((handler_address >> 32) & 0xFFFFFFFF) as u32,
+            lower_isr_address: handler_address as u16,
+            segment_selector: selector, /** Use Code Segment as Selector? **/
+            flags: ((0b1000_0000 | (privilege_level as u8) | (gate_type as u8)) as u16) << 7,
+            middle_isr_address: (handler_address >> 16) as u16,
+            higher_isr_address: (handler_address >> 32) as u32,
             reserved: 0,
         }
     }

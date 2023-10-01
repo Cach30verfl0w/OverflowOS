@@ -18,6 +18,7 @@ use alloc::{
     string::ToString,
     vec,
 };
+use core::arch::asm;
 use libcpu::{cpuid::request_cpu_vendor, DescriptorTable, gdt::{
     GDTDescriptor,
     GlobalDescriptorTable,
@@ -43,6 +44,7 @@ use uefi::{
     Handle,
     Status,
 };
+use uefi::table::runtime::ResetType;
 use libcpu::idt::{Exception, GateType, IDTDescriptor};
 
 extern "x86-interrupt" fn test_interrupt(_stack_frame: &mut InterruptStackFrame) {
@@ -66,6 +68,7 @@ fn main(_image_handle: Handle, mut system_table: SystemTable<Boot>) -> Status {
     // Run bootloader
     info!("Welcome to OverflowOS Bootloader v{}", env!("CARGO_PKG_VERSION"));
     info!("Vendor: {}", request_cpu_vendor().to_string());
+    //halt_cpu();
 
     // Initialize Simple FileSystem
     let mut file_system = SimpleFileSystemProvider::new()
@@ -103,12 +106,16 @@ fn main(_image_handle: Handle, mut system_table: SystemTable<Boot>) -> Status {
     interrupt_descriptor_table.insert(
         Exception::Division as usize,
         IDTDescriptor::new(
-            (test_interrupt as *const ()) as u64,
+            test_interrupt as u64,
             SegmentSelector::new(1, DescriptorTable::GDT, PrivilegeLevel::KernelSpace),
-            GateType::Trap,
+            GateType::Interrupt,
             PrivilegeLevel::KernelSpace,
         ),
     );
     interrupt_descriptor_table.load();
-    return Status::SUCCESS;
+
+    #[allow(unconditional_panic)]
+    let a = 1 / 0;
+    unsafe {  _runtime_services.runtime_services() }.reset(ResetType::SHUTDOWN, Status::SUCCESS, None);
+    return Status::DEVICE_ERROR;
 }

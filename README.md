@@ -33,5 +33,6 @@ $> osimage run-qemu --iso-file overflow.iso
 
 ## Credits
 - `x86_64-unknown-none` target from [phil-opp](https://os.phil-opp.com/minimal-rust-kernel/#target-specification)
+- VGA Text Mode Tutorial from [phil-opp](https://os.phil-opp.com/vga-text-mode/)
 - Some information from [OSDev.org](https://wiki.osdev.org)
 - Information about GDT and IDT from [HackerNoon.com](https://hackernoon.com)
