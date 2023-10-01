@@ -135,7 +135,7 @@ vendor! {
     /// - [CPUVendor::Cyrix] (Microprocessor Developer) - Cyrix Corporation
     /// - [CPUVendor::Centaur] (x86 CPU Design Company) - Centaur Technology
     /// - [CPUVendor::NexGen] (Semiconductor Company) - NexGen Incorporated
-    /// - [CPUVendor::UMX] (Semiconductor Company) - United Microelectronics Corporation
+    /// - [CPUVendor::UMC] (Semiconductor Company) - United Microelectronics Corporation
     /// - [CPUVendor::SiS] (Manufacturing Company) - Silicon Integrated Systems Corp.
     /// - [CPUVendor::Rise] (Microprocessor Company) - Rise Technology
     /// - [CPUVendor::Vortex] (Processor Family) - Silicon Integrated Systems Corp.
