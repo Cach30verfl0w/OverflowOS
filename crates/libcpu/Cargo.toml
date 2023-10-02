@@ -9,6 +9,7 @@ license-file.workspace = true
 repository.workspace = true
 authors.workspace = true
 edition.workspace = true
+readme = "README.md"
 
 [dependencies]
 bitflags = { version = "2.4.0" }

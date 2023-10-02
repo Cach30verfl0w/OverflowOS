@@ -18,14 +18,7 @@ use alloc::{
     string::ToString,
     vec,
 };
-use core::arch::asm;
-use libcpu::{CPUFeature, cpuid::request_cpu_vendor, DescriptorTable, gdt::{
-    GDTDescriptor,
-    GlobalDescriptorTable,
-}, halt_cpu, idt::{
-    InterruptDescriptorTable,
-    InterruptStackFrame,
-}, PrivilegeLevel, SegmentSelector};
+use core::mem;
 use log::{
     info,
     LevelFilter,
@@ -45,11 +38,13 @@ use uefi::{
     Status,
 };
 use uefi::table::runtime::ResetType;
-use libcpu::idt::{Exception, GateType, IDTDescriptor};
+use x86_64::PrivilegeLevel;
+use x86_64::registers::segmentation::{CS, Segment};
+use x86_64::structures::gdt::{Descriptor, GlobalDescriptorTable, SegmentSelector};
+use x86_64::structures::idt::{Entry, InterruptDescriptorTable};
 
-extern "x86-interrupt" fn test_interrupt(_stack_frame: &mut InterruptStackFrame) {
-    halt_cpu();
-}
+static mut GLOBAL_DESCRIPTOR_TABLE: GlobalDescriptorTable = GlobalDescriptorTable::new();
+static mut INTERRUPT_DESCRIPTOR_TABLE: InterruptDescriptorTable = InterruptDescriptorTable::new();
 
 #[entry]
 fn main(_image_handle: Handle, mut system_table: SystemTable<Boot>) -> Status {
@@ -67,14 +62,11 @@ fn main(_image_handle: Handle, mut system_table: SystemTable<Boot>) -> Status {
 
     // Run bootloader
     info!("Welcome to OverflowOS Bootloader v{}", env!("CARGO_PKG_VERSION"));
-    info!("Vendor: {}", request_cpu_vendor().to_string());
-    //halt_cpu();
 
     // Initialize Simple FileSystem
     let mut file_system = SimpleFileSystemProvider::new()
         .unwrap_or_else(|err| panic!("Unable to initialize FileSystem: {}", err));
     info!("Successfully initialized File System with {} volume(s)", file_system.found_volumes());
-    info!("{}", CPUFeature::all_enabled_features().len());
 
     // Open first volume and open kernel
     file_system
@@ -98,24 +90,15 @@ fn main(_image_handle: Handle, mut system_table: SystemTable<Boot>) -> Status {
         .unwrap_or_else(|err| panic!("Unable to load Kernel: {}", err));
     let (_runtime_services, _memory_map) = system_table.exit_boot_services();
 
-    let mut global_descriptor_table = GlobalDescriptorTable::default();
-    global_descriptor_table.insert(1, GDTDescriptor::code_segment(PrivilegeLevel::KernelSpace));
-    global_descriptor_table.insert(2, GDTDescriptor::data_segment(PrivilegeLevel::KernelSpace));
-    global_descriptor_table.load();
+    unsafe {
+        // Load GDT
+        GLOBAL_DESCRIPTOR_TABLE.add_entry(Descriptor::kernel_code_segment());
+        GLOBAL_DESCRIPTOR_TABLE.load();
+        CS::set_reg(SegmentSelector::new(1, PrivilegeLevel::Ring0));
 
-    let mut interrupt_descriptor_table = InterruptDescriptorTable::default();
-    interrupt_descriptor_table.insert(
-        Exception::Division as usize,
-        IDTDescriptor::new(
-            test_interrupt as u64,
-            SegmentSelector::new(1, DescriptorTable::GDT, PrivilegeLevel::KernelSpace),
-            GateType::Interrupt,
-            PrivilegeLevel::KernelSpace,
-        ),
-    );
-    interrupt_descriptor_table.load();
+        // Load IDT
+        INTERRUPT_DESCRIPTOR_TABLE.load();
+    }
 
-    unsafe { asm!("int 0") }; // HERE ERROR CHAIN
     unsafe {  _runtime_services.runtime_services() }.reset(ResetType::SHUTDOWN, Status::SUCCESS, None);
-    return Status::DEVICE_ERROR;
 }

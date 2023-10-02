@@ -1,33 +1,10 @@
 //! This module implements the function for the interaction with the hardware under x86_64 and x86
-//! processors. Here are general features like [wait_for_interrupts] and specific features like the
-//! Global Descriptor Table or the Local Descriptor Table implemented. The first descriptor in this
-//! table has to be filled with zeros. By default, the [gdt::GlobalDescriptorTable::default] is
-//! filling the table storage with zeros, so you can skip setting the first descriptor.
-//!
-//! # Example
-//! The following code example creates an empty descriptor table, generates a descriptor for a kernel
-//! level code and data segment. Then we tell the CPU to load that.
-//! ```rust
-//! use libcpu::{
-//!     gdt::{
-//!         GDTDescriptor,
-//!         GlobalDescriptorTable,
-//!     },
-//!     PrivilegeLevel,
-//! };
-//!
-//! let mut global_descriptor_table = GlobalDescriptorTable::default();
-//! global_descriptor_table.insert(1, GDTDescriptor::code_segment(PrivilegeLevel::KernelSpace));
-//! global_descriptor_table.insert(2, GDTDescriptor::data_segment(PrivilegeLevel::KernelSpace));
-//! global_descriptor_table.load();
-//! ```
+//! processors. Here are general features like [wait_for_interrupts].
 //!
 //! # See also
 //! [x86_64](https://wiki.osdev.org/X86-64) by [OSDev](https://wiki.osdev.org)
 
 pub mod cpuid;
-pub mod gdt;
-pub mod idt;
 
 use crate::MemoryAddress;
 use bit_field::BitField;
@@ -120,16 +97,16 @@ implement_control_features! {
         SMAP("cr4", "Supervisor Mode Access Prevention")                              = 1 << 0x15,
         PKE("cr4", "Protection Key enabled")                                          = 1 << 0x16,
         CET("cr4", "Intel Control-Flow Enforcement Technology (CET)")                 = 1 << 0x17,
-        PKS("cr4", "Enable Protection Keys for Supervisor-Mode Pages")                = 1 << 0x18,
-        X87("xcr0", "x87 FPU/MMX Support (must be 1)")                                = 1 << 0x00,
-        SSE("xcr0", "XSAVE Support for MXCSR and XMM registers")                      = 1 << 0x01,
-        AVX("xcr0", "AVX enabled and XSAVE support for upper YMM register data")      = 1 << 0x02,
-        BNDREG("xcr0", "MPX enabld and XSAVE support for BND0-BND3 registers")        = 1 << 0x03,
-        BNDCSR("xcr0", "MPX enabled and XSAVE suport for BNDCFGU and BNDSTATUS")      = 1 << 0x04,
-        OPMASK("xcr0", "AVX-512 enabled and XSAVE support for opmask registers")      = 1 << 0x05,
-        ZMM_HI256("xcr0", "AVX-512 enabled and XSAVE support for lower ZMM reg data") = 1 << 0x06,
-        HI16_ZMM("xcr0", "AVS-512 enabled and XSAVE support for upper ZMM data")      = 1 << 0x07,
-        PKRU("xcr0", "XSAVE Support for PKRU Register")                               = 1 << 0x09
+        PKS("cr4", "Enable Protection Keys for Supervisor-Mode Pages")                = 1 << 0x18
+        //X87("xcr0", "x87 FPU/MMX Support (must be 1)")                                = 1 << 0x00,
+        //SSE("xcr0", "XSAVE Support for MXCSR and XMM registers")                      = 1 << 0x01,
+        //AVX("xcr0", "AVX enabled and XSAVE support for upper YMM register data")      = 1 << 0x02,
+        //BNDREG("xcr0", "MPX enabld and XSAVE support for BND0-BND3 registers")        = 1 << 0x03,
+        //BNDCSR("xcr0", "MPX enabled and XSAVE suport for BNDCFGU and BNDSTATUS")      = 1 << 0x04,
+        //OPMASK("xcr0", "AVX-512 enabled and XSAVE support for opmask registers")      = 1 << 0x05,
+        //ZMM_HI256("xcr0", "AVX-512 enabled and XSAVE support for lower ZMM reg data") = 1 << 0x06,
+        //HI16_ZMM("xcr0", "AVS-512 enabled and XSAVE support for upper ZMM data")      = 1 << 0x07,
+        //PKRU("xcr0", "XSAVE Support for PKRU Register")                               = 1 << 0x09
     }
 }
 
@@ -389,7 +366,7 @@ impl SegmentSelector {
 #[repr(C, packed)]
 #[derive(Clone, Copy, Ord, PartialOrd, Eq, PartialEq, Debug, Hash)]
 pub struct DescriptorTablePointer {
-    ///  This field represents the linear base address (not the physical address) to the table
+    /// This field represents the linear base address (not the physical address) to the table
     /// (size is depending on the target processor architecture)
     ///
     /// # See also
