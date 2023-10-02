@@ -10,8 +10,6 @@
 //! - [CPUID - CPU Identification](https://www.felixcloutier.com/x86/cpuid) by
 //! [Felix Cloutier](https://www.felixcloutier.com/)
 
-// TODO: Document every feature
-
 use alloc::{
     fmt::{
         Display,
@@ -262,7 +260,7 @@ vendor! {
 features! {
     #[allow(non_camel_case_types)]
     #[derive(Clone, Copy, Ord, PartialOrd, Eq, PartialEq, Debug, Hash)]
-    pub enum CPUFeature {
+    pub enum CPUIDFeature {
         /// SSE3 (Streaming SIMD Extensions 3) is a instruction set extension for IA-32 that
         /// provides instructions for 512-bit registers and operation with 512-bit data in one
         /// instruction. SSE3 is used to optimize algorithm for bigger data. SSE3 is based on SSE

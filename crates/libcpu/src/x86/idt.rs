@@ -568,12 +568,13 @@ pub enum Exception {
 /// by [OSDev.org](https://wiki.osdev.org/)
 /// - [Interrupt Descriptor Table (x86_64)](https://wiki.osdev.org/Interrupt_Descriptor_Table#Structure_on_x86-64)
 /// by [OSDev.org](https://wiki.osdev.org/)
-#[repr(C, packed)]
+#[repr(C)]
 #[derive(Clone, Copy, Ord, PartialOrd, Eq, PartialEq, Debug, Hash)]
 pub struct IDTDescriptor {
     lower_isr_address: u16,
     segment_selector: SegmentSelector,
-    flags: u16,
+    always0: u8,
+    flags: u8,
     middle_isr_address: u16,
     higher_isr_address: u32,
     reserved: u32,
@@ -597,8 +598,9 @@ impl IDTDescriptor {
     ) -> Self {
         Self {
             lower_isr_address: handler_address as u16,
-            segment_selector: selector, /** Use Code Segment as Selector? **/
-            flags: ((0b1000_0000 | (privilege_level as u8) | (gate_type as u8)) as u16) << 7,
+            segment_selector: selector,
+            always0: 0,
+            flags: 0b1000_0000 | (privilege_level as u8) | (gate_type as u8),
             middle_isr_address: (handler_address >> 16) as u16,
             higher_isr_address: (handler_address >> 32) as u32,
             reserved: 0,
@@ -619,7 +621,8 @@ impl IDTDescriptor {
 /// - [Interrupts Tutorial](https://wiki.osdev.org/Interrupts_tutorial) by
 /// [OSDev.org](https://wiki.osdev.org)
 /// - [IDTDescriptor] (Source Code)
-#[repr(C, packed)]
+#[repr(C)]
+#[repr(align(16))]
 #[derive(Clone, Copy, Ord, PartialOrd, Eq, PartialEq, Debug, Hash)]
 pub struct InterruptDescriptorTable {
     descriptors: [IDTDescriptor; 256],

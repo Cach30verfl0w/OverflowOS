@@ -19,7 +19,7 @@ use alloc::{
     vec,
 };
 use core::arch::asm;
-use libcpu::{cpuid::request_cpu_vendor, DescriptorTable, gdt::{
+use libcpu::{CPUFeature, cpuid::request_cpu_vendor, DescriptorTable, gdt::{
     GDTDescriptor,
     GlobalDescriptorTable,
 }, halt_cpu, idt::{
@@ -74,6 +74,7 @@ fn main(_image_handle: Handle, mut system_table: SystemTable<Boot>) -> Status {
     let mut file_system = SimpleFileSystemProvider::new()
         .unwrap_or_else(|err| panic!("Unable to initialize FileSystem: {}", err));
     info!("Successfully initialized File System with {} volume(s)", file_system.found_volumes());
+    info!("{}", CPUFeature::all_enabled_features().len());
 
     // Open first volume and open kernel
     file_system
@@ -114,8 +115,7 @@ fn main(_image_handle: Handle, mut system_table: SystemTable<Boot>) -> Status {
     );
     interrupt_descriptor_table.load();
 
-    #[allow(unconditional_panic)]
-    let a = 1 / 0;
+    unsafe { asm!("int 0") }; // HERE ERROR CHAIN
     unsafe {  _runtime_services.runtime_services() }.reset(ResetType::SHUTDOWN, Status::SUCCESS, None);
     return Status::DEVICE_ERROR;
 }
