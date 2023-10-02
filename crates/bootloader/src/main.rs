@@ -18,11 +18,6 @@ use alloc::{
     string::ToString,
     vec,
 };
-use core::{
-    arch::asm,
-    mem,
-};
-use libcpu::halt_cpu;
 use log::{
     info,
     LevelFilter,
