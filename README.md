@@ -12,7 +12,7 @@ OverflowOS is a UEFI-based Operating System with a monolithic Kernel, fully writ
 - [`OSImage`](https://github.com/Cach30verfl0w/OSImage) -  Command-Line Tool to generate image files for Rust Operating Systems (by [Cach30verfl0w](https://github.com/Cach30verfl0w))
 - [`kernel`](https://github.com/Cach30verfl0w/OverflowOS/tree/main/crates/kernel) - The original monolithic Kernel of OverflowOS (by [Cach30verfl0w](https://github.com/Cach30verfl0w))
 - [`bootloader`](https://github.com/Cach30verfl0w/OverflowOS/tree/main/crates/bootloader) - The original UEFI-based bootloader of OverflowOS (by [Cach30verfl0w](https://github.com/Cach30verfl0w))
-- [`libcpu`](https://github.com/Cach30verfl0w/OverflowOS/tree/main/crates/libcpu) - The library for the implementation of architecture-specific CPU features (by [Cach30verfl0w](https://github.com/Cach30verfl0w))
+- [`libcpu`](https://github.com/Cach30verfl0w/libcpu) - LibCPU is a library to interact with platform-independent and platform-dependant features of the CPU (by [Cach30verfl0w](https://github.com/Cach30verfl0w))
     - This library currently only supports the architectures x86 and x86_64, but ARM and RISC-V support is also planned
 # Install Dependencies
 Here are a few steps to install all dependencies to set up a development environment for OverflowOS.
