@@ -19,7 +19,18 @@ use alloc::{
     vec,
 };
 use core::arch::asm;
-use libcpu::gdt::{GDTDescriptor, GlobalDescriptorTable};
+use libcpu::{
+    gdt::{
+        GDTDescriptor,
+        GlobalDescriptorTable,
+    },
+    idt::InterruptDescriptorTable,
+    set_cs,
+    set_ds,
+    set_ss,
+    PrivilegeLevel,
+    Register,
+};
 use log::{
     info,
     LevelFilter,
@@ -35,12 +46,10 @@ use uefi::{
         FileInfo,
         FileMode,
     },
+    table::runtime::ResetType,
     Handle,
     Status,
 };
-use libcpu::{PrivilegeLevel, Register, set_cs, set_ds, set_ss};
-use libcpu::idt::{InterruptDescriptorTable};
-use uefi::table::runtime::ResetType;
 
 #[entry]
 fn main(_image_handle: Handle, mut system_table: SystemTable<Boot>) -> Status {
@@ -88,8 +97,12 @@ fn main(_image_handle: Handle, mut system_table: SystemTable<Boot>) -> Status {
 
     // Load GDT
     let mut global_descriptor_table = GlobalDescriptorTable::new();
-    let code_selector = global_descriptor_table.push(GDTDescriptor::code_segment(PrivilegeLevel::KernelSpace)).unwrap();
-    let data_selector = global_descriptor_table.push(GDTDescriptor::data_segment(PrivilegeLevel::KernelSpace)).unwrap();
+    let code_selector = global_descriptor_table
+        .push(GDTDescriptor::code_segment(PrivilegeLevel::KernelSpace))
+        .unwrap();
+    let data_selector = global_descriptor_table
+        .push(GDTDescriptor::data_segment(PrivilegeLevel::KernelSpace))
+        .unwrap();
     global_descriptor_table.load();
     set_cs(code_selector);
     set_ds(data_selector.0 as Register);
@@ -101,6 +114,8 @@ fn main(_image_handle: Handle, mut system_table: SystemTable<Boot>) -> Status {
     unsafe { asm!("int 0") };
 
     unsafe {
-        runtime_table.runtime_services().reset(ResetType::SHUTDOWN, Status::SUCCESS, None);
+        runtime_table
+            .runtime_services()
+            .reset(ResetType::SHUTDOWN, Status::SUCCESS, None);
     }
 }
