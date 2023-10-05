@@ -18,6 +18,7 @@ use alloc::{
     string::ToString,
     vec,
 };
+use core::arch::asm;
 use libcpu::gdt::{GDTDescriptor, GlobalDescriptorTable};
 use log::{
     info,
@@ -37,8 +38,8 @@ use uefi::{
     Handle,
     Status,
 };
-use libcpu::{halt_cpu, PrivilegeLevel, Register, set_cs, set_ds, set_ss};
-use libcpu::idt::InterruptDescriptorTable;
+use libcpu::{PrivilegeLevel, Register, set_cs, set_ds, set_ss};
+use libcpu::idt::{InterruptDescriptorTable};
 use uefi::table::runtime::ResetType;
 
 #[entry]
@@ -83,7 +84,7 @@ fn main(_image_handle: Handle, mut system_table: SystemTable<Boot>) -> Status {
     // Parse as ELF file
     let entrypoint_function = parse_elf_file(file_buffer.as_slice())
         .unwrap_or_else(|err| panic!("Unable to load Kernel: {}", err));
-    let (_runtime_services, _memory_map) = system_table.exit_boot_services();
+    let (runtime_table, _memory_map) = system_table.exit_boot_services();
 
     // Load GDT
     let mut global_descriptor_table = GlobalDescriptorTable::new();
@@ -95,8 +96,11 @@ fn main(_image_handle: Handle, mut system_table: SystemTable<Boot>) -> Status {
     set_ss(data_selector.0 as Register);
 
     // Load IDT
-    let interrupt_descriptor_table = InterruptDescriptorTable::default();
+    let mut interrupt_descriptor_table = InterruptDescriptorTable::default();
     interrupt_descriptor_table.load();
+    unsafe { asm!("int 0") };
 
-    halt_cpu();
+    unsafe {
+        runtime_table.runtime_services().reset(ResetType::SHUTDOWN, Status::SUCCESS, None);
+    }
 }
