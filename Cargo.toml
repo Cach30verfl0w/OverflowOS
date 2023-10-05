@@ -12,4 +12,4 @@ edition = "2021"
 
 [workspace.dependencies]
 thiserror-no-std = "2.0.2"
-libcpu = { path = "crates/libcpu" }
+libcpu = { git = "https://github.com/Cach30verfl0w/libcpu" }

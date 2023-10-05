@@ -18,6 +18,7 @@ use alloc::{
     string::ToString,
     vec,
 };
+use libcpu::gdt::{GDTDescriptor, GlobalDescriptorTable};
 use log::{
     info,
     LevelFilter,
@@ -33,33 +34,12 @@ use uefi::{
         FileInfo,
         FileMode,
     },
-    table::runtime::ResetType,
     Handle,
     Status,
 };
-use x86_64::{
-    registers::segmentation::{
-        Segment,
-        CS,
-        DS,
-        ES,
-        FS,
-        GS,
-        SS,
-    },
-    structures::{
-        gdt::{
-            Descriptor,
-            GlobalDescriptorTable,
-        },
-        idt::{
-            InterruptDescriptorTable,
-        },
-    },
-};
-
-static mut GLOBAL_DESCRIPTOR_TABLE: GlobalDescriptorTable = GlobalDescriptorTable::new();
-static mut INTERRUPT_DESCRIPTOR_TABLE: InterruptDescriptorTable = InterruptDescriptorTable::new();
+use libcpu::{halt_cpu, PrivilegeLevel, Register, set_cs, set_ds, set_ss};
+use libcpu::idt::InterruptDescriptorTable;
+use uefi::table::runtime::ResetType;
 
 #[entry]
 fn main(_image_handle: Handle, mut system_table: SystemTable<Boot>) -> Status {
@@ -101,25 +81,22 @@ fn main(_image_handle: Handle, mut system_table: SystemTable<Boot>) -> Status {
         .unwrap_or_else(|err| panic!("Unable to read Kernel as file: {}", err));
 
     // Parse as ELF file
-    let _entrypoint_function = parse_elf_file(file_buffer.as_slice())
+    let entrypoint_function = parse_elf_file(file_buffer.as_slice())
         .unwrap_or_else(|err| panic!("Unable to load Kernel: {}", err));
     let (_runtime_services, _memory_map) = system_table.exit_boot_services();
 
-    unsafe {
-        // Load GDT
-        let code_selector = GLOBAL_DESCRIPTOR_TABLE.add_entry(Descriptor::kernel_code_segment());
-        let data_selector = GLOBAL_DESCRIPTOR_TABLE.add_entry(Descriptor::kernel_data_segment());
-        GLOBAL_DESCRIPTOR_TABLE.load();
-        CS::set_reg(code_selector);
-        DS::set_reg(data_selector);
-        SS::set_reg(data_selector);
-        FS::set_reg(data_selector);
-        ES::set_reg(data_selector);
-        GS::set_reg(data_selector);
+    // Load GDT
+    let mut global_descriptor_table = GlobalDescriptorTable::new();
+    let code_selector = global_descriptor_table.push(GDTDescriptor::code_segment(PrivilegeLevel::KernelSpace)).unwrap();
+    let data_selector = global_descriptor_table.push(GDTDescriptor::data_segment(PrivilegeLevel::KernelSpace)).unwrap();
+    global_descriptor_table.load();
+    set_cs(code_selector);
+    set_ds(data_selector.0 as Register);
+    set_ss(data_selector.0 as Register);
 
-        // Load IDT
-        INTERRUPT_DESCRIPTOR_TABLE.load();
-    }
+    // Load IDT
+    let interrupt_descriptor_table = InterruptDescriptorTable::default();
+    interrupt_descriptor_table.load();
 
-    unsafe { _runtime_services.runtime_services() }.reset(ResetType::SHUTDOWN, Status::SUCCESS, None);
+    halt_cpu();
 }
