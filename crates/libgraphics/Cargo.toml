@@ -1,6 +1,6 @@
 [package]
-name = "kernel"
-description = "This is the project of the UEFI-based OverflowOS monolithic kernel"
+name = "libgraphics"
+description = "LibGraphics is a library to instrument the Graphics Output Protocol for drawing things or writing Text"
 categories = ["memory-management", "no-std", "embedded"]
 version = "1.0.0-dev.1"
 
@@ -10,10 +10,7 @@ repository.workspace = true
 authors.workspace = true
 edition.workspace = true
 
-[package.metadata.osimage]
-kind = "kernel"
-
 [dependencies]
 uefi = { version = "0.24.0", features = ["alloc"] }
-uefi-services = "0.21.0"
-libcpu.workspace = true
+embedded-graphics = "0.8.1"
+thiserror-no-std = "2.0.2"

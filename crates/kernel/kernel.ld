@@ -1,1 +1,0 @@
-ENTRY(kernel_entry)

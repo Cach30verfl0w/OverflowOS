@@ -13,3 +13,4 @@ edition = "2021"
 [workspace.dependencies]
 thiserror-no-std = "2.0.2"
 libcpu = { path = "../libcpu" }
+libgraphics = { path = "crates/libgraphics" }
