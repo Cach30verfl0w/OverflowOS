@@ -5,6 +5,7 @@
 
 extern crate alloc;
 
+use core::fmt::Write;
 use libcpu::{halt_cpu, PrivilegeLevel, Register};
 use libgraphics::embedded_graphics::{
     mono_font::ascii,
@@ -20,13 +21,27 @@ use uefi::{
 };
 
 use core::panic::PanicInfo;
-use log::info;
+use log::{error, info};
 use libgraphics::log::install_logger;
+use libgraphics::text::{TEXT_WRITER_CONTEXT, write_str};
 
 #[panic_handler]
-fn panic(_info: &PanicInfo) -> ! {
-    libgraphics::text::write_str("Error, Error").unwrap();
-    libgraphics::swap_buffers().unwrap();
+fn panic(info: &PanicInfo) -> ! {
+    // Show error with message
+    error!("Unrecoverable Error while booting into OverflowOS: ");
+    let context = unsafe { TEXT_WRITER_CONTEXT.as_mut() }.unwrap();
+    if let Some(message) = info.message() {
+        context.write_fmt(info.message().unwrap().clone()).unwrap();
+        write_str("\n").unwrap();
+    } else {
+        write_str("No error message provided\n").unwrap();
+    }
+
+    // Show location
+    if let Some(location) = info.location() {
+        error!(" => Error found in {} on {}:{}\n", location.file(), location.line(), location.column())
+    }
+
     loop {}
 }
 
@@ -75,6 +90,7 @@ fn main(_image_handle: Handle, mut system_table: SystemTable<Boot>) -> Status {
         interrupt_descriptor_table.load();
         info!("Successfully initialized Interrupt Descriptor Table\n");
     }
+    panic!("Panic please");
 
     info!("CPU is now halting!");
     halt_cpu();

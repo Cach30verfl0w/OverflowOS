@@ -28,9 +28,9 @@ pub static ORANGE: Rgb888     = Rgb888::new(153, 76, 0);
 pub static DARK_BLUE: Rgb888  = Rgb888::new(0, 0, 204);
 pub static LIGHT_BLUE: Rgb888 = Rgb888::new(51, 51, 255);
 
-pub(crate) static mut TEXT_WRITER_CONTEXT: Option<TextWriterContext> = None;
+pub static mut TEXT_WRITER_CONTEXT: Option<TextWriterContext> = None;
 
-pub(crate) struct TextWriterContext<'a> {
+pub struct TextWriterContext<'a> {
     font: MonoFont<'a>,
     current_x: usize,
     current_y: usize,
