@@ -14,3 +14,4 @@ edition.workspace = true
 uefi = { version = "0.24.0", features = ["alloc"] }
 embedded-graphics = "0.8.1"
 thiserror-no-std = "2.0.2"
+log = "0.4.20"

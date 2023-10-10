@@ -16,10 +16,7 @@ kind = "bootloader"
 # uefi-rs as dependency with support for alloc crate and a global allocator
 [dependencies.uefi]
 version = "0.24.0"
-features = ["alloc"]
-
-[dependencies.uefi-services]
-version = "0.21.0"
+features = ["alloc", "global_allocator"]
 
 # log as dependency for console printing
 [dependencies.log]

@@ -1,7 +1,10 @@
 #![no_std]
 
+extern crate alloc;
+
 pub mod error;
 pub mod text;
+pub mod log;
 
 use crate::error::Error;
 use embedded_graphics::{
@@ -26,7 +29,7 @@ pub mod embedded_graphics {
     pub use embedded_graphics::*;
 }
 
-static mut GRAPHICS_CONTEXT: Option<GraphicsContext> = None;
+pub(crate) static mut GRAPHICS_CONTEXT: Option<GraphicsContext> = None;
 
 struct GraphicsContext<'a> {
     swap_buffer: &'a mut [u32],
@@ -77,16 +80,12 @@ pub fn create_context<'a>(boot_services: &'a BootServices) -> Result<(), Error> 
 
     unsafe {
         GRAPHICS_CONTEXT = Some(GraphicsContext {
-            framebuffer: unsafe {
-                core::slice::from_raw_parts_mut(
-                    protocol.frame_buffer().as_mut_ptr() as *mut u32,
-                    protocol.frame_buffer().size(),
-                )
-            },
+            framebuffer: core::slice::from_raw_parts_mut(
+                protocol.frame_buffer().as_mut_ptr() as *mut u32,
+                protocol.frame_buffer().size(),
+            ),
             current_mode: protocol.current_mode_info(),
-            swap_buffer: unsafe {
-                core::slice::from_raw_parts_mut(memory as *mut u32, protocol.frame_buffer().size())
-            },
+            swap_buffer: core::slice::from_raw_parts_mut(memory as *mut u32, protocol.frame_buffer().size()),
         });
     }
     Ok(())
@@ -98,9 +97,9 @@ pub fn set_pixel_at(x: usize, y: usize, color: Rgb888) -> Result<(), Error> {
     let context = unsafe { GRAPHICS_CONTEXT.as_mut() }.ok_or_else(|| Error::NoContext)?;
     *context
         .swap_buffer
-        .get_mut(y * context.current_mode.stride() + x)
+        .get_mut(y * context.current_mode.resolution().0 + x)
         .ok_or_else(|| Error::OutOfBounds)? =
-        ((color.r() as u32) << 16 | (color.g() as u32) << 8 | (color.b() as u32));
+        (color.r() as u32) << 16 | (color.g() as u32) << 8 | (color.b() as u32);
     Ok(())
 }
 
@@ -110,7 +109,7 @@ pub fn get_pixel_at(x: usize, y: usize) -> Result<u32, Error> {
     let context = unsafe { GRAPHICS_CONTEXT.as_ref() }.ok_or_else(|| Error::NoContext)?;
     Ok(*context
         .framebuffer
-        .get(y * context.current_mode.stride() + x)
+        .get(y * context.current_mode.resolution().0 + x)
         .ok_or_else(|| Error::OutOfBounds)?)
 }
 
@@ -130,10 +129,23 @@ pub fn fill_buffer(color: Rgb888) -> Result<(), Error> {
     Ok(())
 }
 
+pub fn fill(x: usize, y: usize, width: usize, height: usize, color: Rgb888) -> Result<(), Error> {
+    for cx in x..(x + width) {
+        for cy in y..(y + height) {
+            set_pixel_at(cx, cy, color)?;
+        }
+    }
+    Ok(())
+}
+
 /// This function copies the content of the swap buffer into the frame buffer and shows the drawn
 /// screen to the user. If no context is created, this function returns a [Error::NoContext] error.
 pub fn swap_buffers() -> Result<(), Error> {
     let context = unsafe { GRAPHICS_CONTEXT.as_mut() }.ok_or_else(|| Error::NoContext)?;
     context.framebuffer.copy_from_slice(context.swap_buffer);
     Ok(())
+}
+
+pub fn resolution() -> Result<(usize, usize), Error> {
+    Ok(unsafe { GRAPHICS_CONTEXT.as_mut() }.ok_or_else(|| Error::NoContext)?.current_mode.resolution())
 }

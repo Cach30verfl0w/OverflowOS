@@ -1,3 +1,4 @@
+use core::fmt;
 use crate::{
     embedded_graphics::Drawable,
     error::Error,
@@ -20,12 +21,28 @@ use embedded_graphics::{
     },
 };
 
-static mut TEXT_WRITER_CONTEXT: Option<TextWriterContext> = None;
+pub static DARK_GRAY: Rgb888  = Rgb888::new(90, 90, 90);
+pub static RED: Rgb888        = Rgb888::new(255, 0, 0);
+pub static GREEN: Rgb888      = Rgb888::new(0, 255, 0);
+pub static ORANGE: Rgb888     = Rgb888::new(153, 76, 0);
+pub static DARK_BLUE: Rgb888  = Rgb888::new(0, 0, 204);
+pub static LIGHT_BLUE: Rgb888 = Rgb888::new(51, 51, 255);
 
-struct TextWriterContext<'a> {
+pub(crate) static mut TEXT_WRITER_CONTEXT: Option<TextWriterContext> = None;
+
+pub(crate) struct TextWriterContext<'a> {
     font: MonoFont<'a>,
     current_x: usize,
     current_y: usize,
+    current_foreground_color: Rgb888,
+    current_background_color: Rgb888
+}
+
+impl fmt::Write for TextWriterContext<'_> {
+    fn write_str(&mut self, s: &str) -> fmt::Result {
+        write_str(s).unwrap();
+        Ok(())
+    }
 }
 
 pub fn create_text_writer_context(font: MonoFont<'static>) -> Result<(), Error> {
@@ -42,6 +59,8 @@ pub fn create_text_writer_context(font: MonoFont<'static>) -> Result<(), Error> 
             font,
             current_x: 0,
             current_y: 0,
+            current_foreground_color: Rgb888::WHITE,
+            current_background_color: Rgb888::BLACK
         });
     }
     Ok(())
@@ -72,8 +91,8 @@ pub fn write_char(char: char) -> Result<(), Error> {
         ),
         MonoTextStyleBuilder::new()
             .font(&text_writer_context.font)
-            .text_color(Rgb888::WHITE)
-            .background_color(Rgb888::BLACK)
+            .text_color(text_writer_context.current_foreground_color)
+            .background_color(text_writer_context.current_background_color)
             .build(),
         TextStyleBuilder::new()
             .alignment(Alignment::Left)
@@ -83,10 +102,7 @@ pub fn write_char(char: char) -> Result<(), Error> {
     .draw(graphics_context)?;
 
     text_writer_context.current_x += 1;
-    if text_writer_context.current_x
-        >= graphics_context.current_mode.resolution().1
-            / text_writer_context.font.character_size.height as usize
-    {
+    if text_writer_context.current_x >= graphics_context.current_mode.resolution().0 {
         next_row()?;
     }
     Ok(())
@@ -99,6 +115,13 @@ pub fn write_str(string: &str) -> Result<(), Error> {
             _ => write_char(char)?,
         }
     }
+    Ok(())
+}
+
+pub fn set_color(background_color: Rgb888, foreground_color: Rgb888) -> Result<(), Error> {
+    let context = unsafe { TEXT_WRITER_CONTEXT.as_mut() }.ok_or_else(|| Error::NoContext)?;
+    context.current_foreground_color = foreground_color;
+    context.current_background_color = background_color;
     Ok(())
 }
 
