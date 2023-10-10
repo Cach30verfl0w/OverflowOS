@@ -12,7 +12,6 @@ use core::fmt::Write;
 use libcpu::{
     halt_cpu,
     PrivilegeLevel,
-    Register,
 };
 use libgraphics::embedded_graphics::{Drawable, mono_font::ascii, pixelcolor::Rgb888, prelude::RgbColor};
 use uefi::{

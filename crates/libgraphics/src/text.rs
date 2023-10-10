@@ -102,7 +102,7 @@ pub fn write_char(char: char) -> Result<(), Error> {
     .draw(graphics_context)?;
 
     text_writer_context.current_x += 1;
-    if text_writer_context.current_x >= graphics_context.current_mode.resolution().0 {
+    if text_writer_context.current_x >= graphics_context.current_mode.stride() {
         next_row()?;
     }
     Ok(())

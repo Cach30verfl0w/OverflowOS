@@ -101,7 +101,7 @@ pub fn set_pixel_at(x: usize, y: usize, color: Rgb888) -> Result<(), Error> {
     let context = unsafe { GRAPHICS_CONTEXT.as_mut() }.ok_or_else(|| Error::NoContext)?;
     *context
         .swap_buffer
-        .get_mut(y * context.current_mode.resolution().0 + x)
+        .get_mut(y * context.current_mode.stride() + x)
         .ok_or_else(|| Error::OutOfBounds)? =
         (color.r() as u32) << 16 | (color.g() as u32) << 8 | (color.b() as u32);
     Ok(())
@@ -113,7 +113,7 @@ pub fn get_pixel_at(x: usize, y: usize) -> Result<u32, Error> {
     let context = unsafe { GRAPHICS_CONTEXT.as_ref() }.ok_or_else(|| Error::NoContext)?;
     Ok(*context
         .framebuffer
-        .get(y * context.current_mode.resolution().0 + x)
+        .get(y * context.current_mode.stride() + x)
         .ok_or_else(|| Error::OutOfBounds)?)
 }
 
