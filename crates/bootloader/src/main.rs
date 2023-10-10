@@ -8,7 +8,6 @@ pub(crate) mod files;
 
 extern crate alloc;
 
-use alloc::format;
 use core::fmt::Write;
 use libcpu::{
     halt_cpu,
@@ -34,7 +33,6 @@ use crate::{
 };
 use core::panic::PanicInfo;
 use libgraphics::{
-    embedded_graphics::mono_font::MonoFont,
     text::{
         next_row,
         TEXT_WRITER_CONTEXT,
@@ -143,7 +141,6 @@ fn main(_image_handle: Handle, mut system_table: SystemTable<Boot>) -> Status {
         interrupt_descriptor_table.load();
         info!("Successfully initialized Interrupt Descriptor Table\n");
     }
-    panic!("Panic please");
 
     info!("CPU is now halting!");
     halt_cpu();
