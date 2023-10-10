@@ -1,8 +1,28 @@
+use crate::text::{
+    set_color,
+    write_char,
+    write_str,
+    DARK_BLUE,
+    DARK_GRAY,
+    GREEN,
+    LIGHT_BLUE,
+    ORANGE,
+    RED,
+    TEXT_WRITER_CONTEXT,
+};
 use core::fmt::Write;
-use embedded_graphics::pixelcolor::Rgb888;
-use embedded_graphics::prelude::RgbColor;
-use log::{Level, Log, Metadata, Record, set_logger, set_max_level};
-use crate::text::{DARK_BLUE, DARK_GRAY, GREEN, LIGHT_BLUE, ORANGE, RED, set_color, TEXT_WRITER_CONTEXT, write_char, write_str};
+use embedded_graphics::{
+    pixelcolor::Rgb888,
+    prelude::RgbColor,
+};
+use log::{
+    set_logger,
+    set_max_level,
+    Level,
+    Log,
+    Metadata,
+    Record,
+};
 
 pub static LOGGER: GOPLogger = GOPLogger;
 
@@ -43,7 +63,9 @@ impl Log for GOPLogger {
 
         set_color(Rgb888::BLACK, Rgb888::WHITE).unwrap();
         write_char(' ').unwrap();
-        unsafe { TEXT_WRITER_CONTEXT.as_mut().unwrap() }.write_fmt(record.args().clone()).unwrap();
+        unsafe { TEXT_WRITER_CONTEXT.as_mut().unwrap() }
+            .write_fmt(record.args().clone())
+            .unwrap();
         crate::swap_buffers().unwrap();
     }
 

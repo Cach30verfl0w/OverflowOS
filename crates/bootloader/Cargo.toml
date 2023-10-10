@@ -22,10 +22,6 @@ features = ["alloc", "global_allocator"]
 [dependencies.log]
 version = "0.4.20"
 
-# spin as dependency for Mutex
-[dependencies.spin]
-version = "0.9.8"
-
 [dependencies.thiserror-no-std]
 version = "2.0.2"
 

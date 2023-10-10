@@ -3,8 +3,8 @@
 extern crate alloc;
 
 pub mod error;
-pub mod text;
 pub mod log;
+pub mod text;
 
 use crate::error::Error;
 use embedded_graphics::{
@@ -85,7 +85,10 @@ pub fn create_context<'a>(boot_services: &'a BootServices) -> Result<(), Error> 
                 protocol.frame_buffer().size(),
             ),
             current_mode: protocol.current_mode_info(),
-            swap_buffer: core::slice::from_raw_parts_mut(memory as *mut u32, protocol.frame_buffer().size()),
+            swap_buffer: core::slice::from_raw_parts_mut(
+                memory as *mut u32,
+                protocol.frame_buffer().size(),
+            ),
         });
     }
     Ok(())
@@ -147,5 +150,8 @@ pub fn swap_buffers() -> Result<(), Error> {
 }
 
 pub fn resolution() -> Result<(usize, usize), Error> {
-    Ok(unsafe { GRAPHICS_CONTEXT.as_mut() }.ok_or_else(|| Error::NoContext)?.current_mode.resolution())
+    Ok(unsafe { GRAPHICS_CONTEXT.as_mut() }
+        .ok_or_else(|| Error::NoContext)?
+        .current_mode
+        .resolution())
 }

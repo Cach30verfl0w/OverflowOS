@@ -1,9 +1,9 @@
-use core::fmt;
 use crate::{
     embedded_graphics::Drawable,
     error::Error,
     GRAPHICS_CONTEXT,
 };
+use core::fmt;
 use embedded_graphics::{
     mono_font::{
         MonoFont,
@@ -21,11 +21,11 @@ use embedded_graphics::{
     },
 };
 
-pub static DARK_GRAY: Rgb888  = Rgb888::new(90, 90, 90);
-pub static RED: Rgb888        = Rgb888::new(255, 0, 0);
-pub static GREEN: Rgb888      = Rgb888::new(0, 255, 0);
-pub static ORANGE: Rgb888     = Rgb888::new(153, 76, 0);
-pub static DARK_BLUE: Rgb888  = Rgb888::new(0, 0, 204);
+pub static DARK_GRAY: Rgb888 = Rgb888::new(90, 90, 90);
+pub static RED: Rgb888 = Rgb888::new(255, 0, 0);
+pub static GREEN: Rgb888 = Rgb888::new(0, 255, 0);
+pub static ORANGE: Rgb888 = Rgb888::new(153, 76, 0);
+pub static DARK_BLUE: Rgb888 = Rgb888::new(0, 0, 204);
 pub static LIGHT_BLUE: Rgb888 = Rgb888::new(51, 51, 255);
 
 pub static mut TEXT_WRITER_CONTEXT: Option<TextWriterContext> = None;
@@ -35,7 +35,7 @@ pub struct TextWriterContext<'a> {
     current_x: usize,
     current_y: usize,
     current_foreground_color: Rgb888,
-    current_background_color: Rgb888
+    current_background_color: Rgb888,
 }
 
 impl fmt::Write for TextWriterContext<'_> {
@@ -60,7 +60,7 @@ pub fn create_text_writer_context(font: MonoFont<'static>) -> Result<(), Error> 
             current_x: 0,
             current_y: 0,
             current_foreground_color: Rgb888::WHITE,
-            current_background_color: Rgb888::BLACK
+            current_background_color: Rgb888::BLACK,
         });
     }
     Ok(())
