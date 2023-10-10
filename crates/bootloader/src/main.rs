@@ -5,12 +5,11 @@
 
 extern crate alloc;
 
-pub(crate) mod elf_loader;
 pub(crate) mod error;
 pub(crate) mod file;
+pub(crate) mod graphics;
 
 use crate::{
-    elf_loader::parse_elf_file,
     file::SimpleFileSystemProvider,
 };
 use alloc::{
@@ -18,47 +17,41 @@ use alloc::{
     string::ToString,
     vec,
 };
-use core::arch::asm;
-use libcpu::{
-    gdt::{
-        GDTDescriptor,
-        GlobalDescriptorTable,
-    },
-    idt::InterruptDescriptorTable,
-    set_cs,
-    set_ds,
-    set_ss,
-    PrivilegeLevel,
-    Register,
-};
+use embedded_graphics::mono_font::ascii;
+use libcpu::{gdt::{
+    GDTDescriptor,
+    GlobalDescriptorTable,
+}, set_cs, set_ds, set_ss, PrivilegeLevel, Register, halt_cpu};
+use libcpu::interrupts::{Exception, GateType, IDTDescriptor, InterruptDescriptorTable, InterruptStackFrame};
 use log::{
     info,
     LevelFilter,
 };
-use uefi::{
-    entry,
-    prelude::{
-        Boot,
-        SystemTable,
-    },
-    proto::media::file::{
-        File,
-        FileInfo,
-        FileMode,
-    },
-    table::runtime::ResetType,
-    Handle,
-    Status,
-};
+use uefi::{entry, prelude::{
+    Boot,
+    SystemTable,
+}, proto::media::file::{
+    File,
+    FileInfo,
+    FileMode,
+}, table::runtime::ResetType, Handle, Status, Identify};
+use uefi_services::system_table;
+use crate::graphics::{TextWriter, UEFIFramebuffer};
+
+extern "x86-interrupt" fn test(frame: InterruptStackFrame) {
+    unsafe {
+        frame.ret();
+    }
+}
 
 #[entry]
-fn main(_image_handle: Handle, mut system_table: SystemTable<Boot>) -> Status {
+fn main(_image_handle: Handle, mut sys_table: SystemTable<Boot>) -> Status {
     // Clear stdout and if failed, abort execution of bootloader. After that, initialize uefi services
-    if let Err(status) = system_table.stdout().clear().map_err(|err| err.status()) {
+    if let Err(status) = sys_table.stdout().clear().map_err(|err| err.status()) {
         return status;
     }
 
-    if let Err(status) = uefi_services::init(&mut system_table).map_err(|err| err.status()) {
+    if let Err(status) = uefi_services::init(&mut sys_table).map_err(|err| err.status()) {
         return status;
     }
 
@@ -90,12 +83,21 @@ fn main(_image_handle: Handle, mut system_table: SystemTable<Boot>) -> Status {
     file.read(file_buffer.as_mut_slice())
         .unwrap_or_else(|err| panic!("Unable to read Kernel as file: {}", err));
 
-    // Parse as ELF file
-    let entrypoint_function = parse_elf_file(file_buffer.as_slice())
-        .unwrap_or_else(|err| panic!("Unable to load Kernel: {}", err));
-    let (runtime_table, _memory_map) = system_table.exit_boot_services();
+    // Create Frame Buffer and exit boot services
+    let mut framebuffer = UEFIFramebuffer::new(unsafe {
+        system_table().as_ref().boot_services()
+    }).unwrap();
+    let (runtime_table, _memory_map) = sys_table.exit_boot_services();
+
+    // Clear Screen
+    framebuffer.clear();
+    framebuffer.swap_buffer();
+
+    // Create Text writer
+    let mut text_writer = TextWriter::new(&mut framebuffer, ascii::FONT_8X13);
 
     // Load GDT
+    text_writer.write_string("Initializing Global Descriptor Table\n");
     let mut global_descriptor_table = GlobalDescriptorTable::new();
     let code_selector = global_descriptor_table
         .push(GDTDescriptor::code_segment(PrivilegeLevel::KernelSpace))
@@ -109,10 +111,12 @@ fn main(_image_handle: Handle, mut system_table: SystemTable<Boot>) -> Status {
     set_ss(data_selector.0 as Register);
 
     // Load IDT
+    text_writer.write_string("Initializing Interrupt Descriptor Table\n");
     let mut interrupt_descriptor_table = InterruptDescriptorTable::default();
     interrupt_descriptor_table.load();
-    unsafe { asm!("int 0") };
+    interrupt_descriptor_table.insert(Exception::Division, IDTDescriptor::new(test, GateType::Trap, PrivilegeLevel::KernelSpace));
 
+    halt_cpu();
     unsafe {
         runtime_table
             .runtime_services()

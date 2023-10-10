@@ -39,3 +39,4 @@ default-features = false
 # Import some crates from workspace
 [dependencies]
 libcpu.workspace = true
+embedded-graphics = "0.8.1"

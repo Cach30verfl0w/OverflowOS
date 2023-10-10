@@ -9,6 +9,9 @@ use uefi::{
 pub enum Error {
     #[error("UEFI firmware operation failed with code {0}")]
     UEFI(#[from] Status),
+    #[error("UEFI firmware operation failed: {0}")]
+    UEFIError(#[from] uefi::Error),
+
     // Custom Errors
     #[error("{0} is out of bounds")]
     OutOfBounds(usize),

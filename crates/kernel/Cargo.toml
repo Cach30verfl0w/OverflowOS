@@ -14,4 +14,6 @@ edition.workspace = true
 kind = "kernel"
 
 [dependencies]
-uefi = { version = "0.24.0", features = ["alloc", "global_allocator"] }
+uefi = { version = "0.24.0", features = ["alloc"] }
+uefi-services = "0.21.0"
+libcpu.workspace = true
