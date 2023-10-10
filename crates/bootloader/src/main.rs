@@ -28,10 +28,10 @@ use crate::{
     files::init_file_system_driver,
 };
 use core::panic::PanicInfo;
-use libgraphics::{GRAPHICS_CONTEXT, text::{
+use libgraphics::text::{
     next_row,
     TEXT_WRITER_CONTEXT,
-}};
+};
 use log::{
     error,
     info,
@@ -122,8 +122,8 @@ fn main(_image_handle: Handle, mut system_table: SystemTable<Boot>) -> Status {
         global_descriptor_table.load();
 
         libcpu::set_cs(code_selector);
-        libcpu::set_ds(data_selector.0 as Register);
-        libcpu::set_ss(data_selector.0 as Register);
+        libcpu::set_ds(data_selector);
+        libcpu::set_ss(data_selector);
         info!("Successfully initialized Global Descriptor Table\n");
     }
 
