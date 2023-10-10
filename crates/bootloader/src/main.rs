@@ -14,11 +14,7 @@ use libcpu::{
     PrivilegeLevel,
     Register,
 };
-use libgraphics::embedded_graphics::{
-    mono_font::ascii,
-    pixelcolor::Rgb888,
-    prelude::RgbColor,
-};
+use libgraphics::embedded_graphics::{Drawable, mono_font::ascii, pixelcolor::Rgb888, prelude::RgbColor};
 use uefi::{
     entry,
     prelude::Boot,
@@ -32,12 +28,10 @@ use crate::{
     files::init_file_system_driver,
 };
 use core::panic::PanicInfo;
-use libgraphics::{
-    text::{
-        next_row,
-        TEXT_WRITER_CONTEXT,
-    },
-};
+use libgraphics::{GRAPHICS_CONTEXT, text::{
+    next_row,
+    TEXT_WRITER_CONTEXT,
+}};
 use log::{
     error,
     info,
