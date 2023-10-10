@@ -5,8 +5,6 @@
 
 extern crate alloc;
 
-pub(crate) mod error;
-
 use libcpu::{halt_cpu, PrivilegeLevel, Register};
 use libgraphics::embedded_graphics::{
     mono_font::ascii,
@@ -22,7 +20,6 @@ use uefi::{
 };
 
 use core::panic::PanicInfo;
-use libcpu::DescriptorTable::GDT;
 use log::info;
 use libgraphics::log::install_logger;
 
@@ -54,7 +51,7 @@ fn main(_image_handle: Handle, mut system_table: SystemTable<Boot>) -> Status {
     info!("Detected resolution of {}x{} pixels\n", width, height);
 
     // Exit Boot Services
-    let (runtime_table, memory_map) = system_table.exit_boot_services();
+    let (_, _) = system_table.exit_boot_services();
     info!("Exited UEFI Boot Services, system is now in Runtime Services\n");
 
     #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
@@ -74,7 +71,7 @@ fn main(_image_handle: Handle, mut system_table: SystemTable<Boot>) -> Status {
     #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
     {
         use libcpu::interrupts::*;
-        let mut interrupt_descriptor_table = InterruptDescriptorTable::default();
+        let interrupt_descriptor_table = InterruptDescriptorTable::default();
         interrupt_descriptor_table.load();
         info!("Successfully initialized Interrupt Descriptor Table\n");
     }
