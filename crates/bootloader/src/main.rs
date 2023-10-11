@@ -13,8 +13,14 @@ use libcpu::{
     halt_cpu,
     PrivilegeLevel,
 };
-use libgraphics::embedded_graphics::{Drawable, mono_font::ascii, pixelcolor::Rgb888, prelude::RgbColor};
+use libgraphics::embedded_graphics::{
+    mono_font::ascii,
+    pixelcolor::Rgb888,
+    prelude::RgbColor,
+    Drawable,
+};
 use uefi::{
+    allocator,
     entry,
     prelude::Boot,
     table::SystemTable,
@@ -26,7 +32,10 @@ use crate::{
     error::Error,
     files::init_file_system_driver,
 };
-use core::panic::PanicInfo;
+use core::{
+    panic::PanicInfo,
+    ptr::NonNull,
+};
 use libgraphics::text::{
     next_row,
     TEXT_WRITER_CONTEXT,
@@ -36,9 +45,15 @@ use log::{
     info,
 };
 use uefi::{
-    prelude::BootServices,
+    prelude::{
+        BootServices,
+        RuntimeServices,
+    },
     table::runtime::ResetType,
 };
+
+static mut BOOT_SERVICES: Option<NonNull<BootServices>> = None;
+static mut RUNTIME_SERVICES: Option<NonNull<RuntimeServices>> = None;
 
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
@@ -57,7 +72,14 @@ fn panic(info: &PanicInfo) -> ! {
         error!(" => Error found in {} on {}:{}", location.file(), location.line(), location.column())
     }
 
-    loop {}
+    // Wait 10 seconds and shutdown computer
+    unsafe {
+        BOOT_SERVICES.unwrap().as_ref().stall(10000000);
+        RUNTIME_SERVICES
+            .unwrap()
+            .as_ref()
+            .reset(ResetType::SHUTDOWN, Status::LOAD_ERROR, None)
+    }
 }
 
 fn init_graphics(boot_services: &BootServices) -> Result<(), Error> {
@@ -71,40 +93,34 @@ fn init_graphics(boot_services: &BootServices) -> Result<(), Error> {
 
 #[entry]
 fn main(_image_handle: Handle, mut system_table: SystemTable<Boot>) -> Status {
+    unsafe {
+        allocator::init(system_table.boot_services());
+        BOOT_SERVICES = NonNull::new(system_table.boot_services() as *const _ as *mut _);
+        RUNTIME_SERVICES = NonNull::new(system_table.runtime_services() as *const _ as *mut _);
+    }
+
     // Clear stdout and if failed, abort execution of bootloader. After that, initialize uefi services
     if let Err(status) = system_table.stdout().clear().map_err(|err| err.status()) {
         return status;
     }
 
     // Initiate Graphics Driver with Logger and display welcome message with resolution information
-    match init_graphics(system_table.boot_services()) {
-        Err(error) => {
-            system_table
-                .stdout()
-                .write_fmt(format_args!(
-                    "Unable to initialize Graphics: {} (Shutdown in 10 seconds)",
-                    error
-                ))
-                .unwrap();
-            system_table.boot_services().stall(10000000); // Stall execution for 10 seconds
-            unsafe {
-                system_table
-                    .runtime_services()
-                    .reset(ResetType::SHUTDOWN, Status::LOAD_ERROR, None);
-            }
-        }
-        Ok(()) => {}
-    };
+    if let Err(error) = init_graphics(system_table.boot_services()) {
+        panic!("Unable to initialize Graphics => {} (Shutdown in 10 seconds)", error);
+    }
 
     let (width, height) = libgraphics::resolution().unwrap();
     info!("Welcome to OverflowOS Bootloader v{}\n", env!("CARGO_PKG_VERSION"));
     info!("Detected resolution of {}x{} pixels\n", width, height);
 
     // Initialize file system over simple file system driver
-    let file_system_driver = init_file_system_driver().unwrap();
+    if let Err(error) = init_file_system_driver(system_table.boot_services()) {
+        panic!("Unable to initialize File System Driver => {} (Shutdown in 10 seconds)", error);
+    }
 
     // Exit Boot Services and notify user about that
-    let (_, _) = system_table.exit_boot_services();
+    let (system_table, _) = system_table.exit_boot_services();
+    unsafe { RUNTIME_SERVICES = NonNull::new(system_table.runtime_services() as *const _ as *mut _) };
     info!("Exited UEFI Boot Services, system is now in Runtime Services\n");
 
     // Initialize GDT if target architecture is IA-32 or x86_64

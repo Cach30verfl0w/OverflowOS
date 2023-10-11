@@ -102,7 +102,10 @@ pub fn write_char(char: char) -> Result<(), Error> {
     .draw(graphics_context)?;
 
     text_writer_context.current_x += 1;
-    if text_writer_context.current_x >= graphics_context.current_mode.stride() {
+    if text_writer_context.current_x
+        >= graphics_context.current_mode.stride()
+            / text_writer_context.font.character_size.width as usize
+    {
         next_row()?;
     }
     Ok(())

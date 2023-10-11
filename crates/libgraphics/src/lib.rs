@@ -6,8 +6,8 @@ pub mod error;
 pub mod log;
 pub mod text;
 
-use ::embedded_graphics::image::Image;
 use crate::error::Error;
+use ::embedded_graphics::image::Image;
 use embedded_graphics::{
     pixelcolor::Rgb888,
     prelude::*,
@@ -146,7 +146,9 @@ pub fn fill(x: usize, y: usize, width: usize, height: usize, color: Rgb888) -> R
 
 /// This functions creates a image at the specified position and writes it into the framebuffer. If
 /// no context is created, this function returns a [Error::NoContext] error.
-pub fn draw_image<T: ImageDrawable<Color = Rgb888>>(image: &T, x: usize, y: usize) -> Result<(), Error> {
+pub fn draw_image<T: ImageDrawable<Color = Rgb888>>(
+    image: &T, x: usize, y: usize,
+) -> Result<(), Error> {
     let context = unsafe { GRAPHICS_CONTEXT.as_mut() }.ok_or_else(|| Error::NoContext)?;
     let image = Image::new(image, Point::new(x as i32, y as i32));
     image.draw(context)?;
