@@ -5,6 +5,7 @@
 
 pub(crate) mod error;
 pub(crate) mod files;
+pub(crate) mod elf;
 
 extern crate alloc;
 
@@ -114,9 +115,25 @@ fn main(_image_handle: Handle, mut system_table: SystemTable<Boot>) -> Status {
     info!("Detected resolution of {}x{} pixels\n", width, height);
 
     // Initialize file system over simple file system driver
-    if let Err(error) = init_file_system_driver(system_table.boot_services()) {
-        panic!("Unable to initialize File System Driver => {} (Shutdown in 10 seconds)", error);
+    let mut file_system_context = match init_file_system_driver(system_table.boot_services()) {
+        Err(error) => {
+            panic!("Unable to initialize File System Driver => {} (Shutdown in 10 seconds)", error)
+        }
+        Ok(context) => context,
+    };
+
+    // Load kernel into memory
+    let kernel_data = files::read_file(&mut file_system_context, 0, "\\EFI\\BOOT\\KERNEL.ELF").unwrap();
+    info!("Loaded {} kB of Kernel data into the memory\n", kernel_data.len() / 1024);
+
+    // Parse kernel in memory as ELF file
+    match elf::parse_file(kernel_data) {
+        Err(error) => {
+            panic!("Unable to load Kernel file as ELF => {} (Shutdown in 10 seconds)", error)
+        }
+        Ok(_) => {}
     }
+    info!("Successfully in-memory loaded kernel as ELF file\n");
 
     // Exit Boot Services and notify user about that
     let (system_table, _) = system_table.exit_boot_services();

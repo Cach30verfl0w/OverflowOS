@@ -1,5 +1,7 @@
+use elf::ParseError;
 use log::SetLoggerError;
 use thiserror_no_std::Error;
+use uefi::data_types::FromStrError;
 
 #[derive(Error, Debug)]
 pub enum Error {
@@ -10,5 +12,14 @@ pub enum Error {
     UEFI(#[from] uefi::Error),
 
     #[error("Logger Error: Unable to set logger")]
-    Logger(#[from] SetLoggerError)
+    Logger(#[from] SetLoggerError),
+
+    #[error("There is no context")]
+    NoContext,
+
+    #[error("From String Error: {0}")]
+    FromStr(#[from] FromStrError),
+
+    #[error("ELF Parse Error: {0}")]
+    ElfError(#[from] ParseError)
 }
