@@ -25,12 +25,9 @@ version = "0.4.20"
 [dependencies.thiserror-no-std]
 version = "2.0.2"
 
-[dependencies.elf]
-version = "0.7.2"
-default-features = false
-
 # Import some crates from workspace
 [dependencies]
+libelfloader.workspace = true
 libcpu.workspace = true
 libgraphics.workspace = true
 tinybmp = "0.5.0"

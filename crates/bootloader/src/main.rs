@@ -11,8 +11,7 @@ extern crate alloc;
 
 use core::fmt::Write;
 use libcpu::{
-    halt_cpu,
-    PrivilegeLevel,
+    halt_cpu
 };
 use libgraphics::embedded_graphics::{
     mono_font::ascii,
@@ -139,34 +138,6 @@ fn main(_image_handle: Handle, mut system_table: SystemTable<Boot>) -> Status {
     let (system_table, _) = system_table.exit_boot_services();
     unsafe { RUNTIME_SERVICES = NonNull::new(system_table.runtime_services() as *const _ as *mut _) };
     info!("Exited UEFI Boot Services, system is now in Runtime Services\n");
-
-    // Initialize GDT if target architecture is IA-32 or x86_64
-    #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-    {
-        use libcpu::gdt::*;
-        let mut global_descriptor_table = GlobalDescriptorTable::new();
-        let code_selector = global_descriptor_table
-            .push(GDTDescriptor::code_segment(PrivilegeLevel::KernelSpace))
-            .unwrap();
-        let data_selector = global_descriptor_table
-            .push(GDTDescriptor::data_segment(PrivilegeLevel::KernelSpace))
-            .unwrap();
-        global_descriptor_table.load();
-
-        libcpu::set_cs(code_selector);
-        libcpu::set_ds(data_selector);
-        libcpu::set_ss(data_selector);
-        info!("Successfully initialized Global Descriptor Table\n");
-    }
-
-    // Initialize GDT if target architecture is IA-32 or x86_64
-    #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-    {
-        use libcpu::interrupts::*;
-        let interrupt_descriptor_table = InterruptDescriptorTable::default();
-        interrupt_descriptor_table.load();
-        info!("Successfully initialized Interrupt Descriptor Table\n");
-    }
 
     info!("CPU is now halting!");
     halt_cpu();
