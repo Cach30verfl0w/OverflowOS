@@ -1,4 +1,3 @@
-use elf::ParseError;
 use log::SetLoggerError;
 use thiserror_no_std::Error;
 use uefi::data_types::FromStrError;
@@ -18,8 +17,5 @@ pub enum Error {
     NoContext,
 
     #[error("From String Error: {0}")]
-    FromStr(#[from] FromStrError),
-
-    #[error("ELF Parse Error: {0}")]
-    ElfError(#[from] ParseError)
+    FromStr(#[from] FromStrError)
 }
