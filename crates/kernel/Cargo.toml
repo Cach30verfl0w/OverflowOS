@@ -16,5 +16,5 @@ edition.workspace = true
 [dependencies]
 libcpu.workspace = true
 libgraphics.workspace = true
-libelfloader.workspace = true
+libelf.workspace = true
 log = "0.4.20"

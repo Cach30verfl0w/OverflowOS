@@ -27,7 +27,7 @@ version = "2.0.2"
 
 # Import some crates from workspace
 [dependencies]
-libelfloader.workspace = true
+libelf.workspace = true
 libcpu.workspace = true
 libgraphics.workspace = true
 tinybmp = "0.5.0"

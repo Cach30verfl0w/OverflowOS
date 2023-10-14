@@ -14,4 +14,4 @@ edition = "2021"
 thiserror-no-std = "2.0.2"
 libcpu = { git = "https://github.com/Cach30verfl0w/libcpu" }
 libgraphics = { path = "crates/libgraphics" }
-libelfloader = { path = "crates/libelfloader" }
+libelf = { git = "https://github.com/Cach30verfl0w/libelf", default-features = false }

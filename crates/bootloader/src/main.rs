@@ -123,7 +123,7 @@ fn main(_image_handle: Handle, mut system_table: SystemTable<Boot>) -> Status {
     // Load kernel into memory
     let kernel_data = files::read_file(&mut file_system_context, 0, "\\EFI\\BOOT\\KERNEL.ELF").unwrap();
     info!("Loaded {} kB of Kernel data into the memory\n", kernel_data.len() / 1024);
-    
+
     // Exit Boot Services and notify user about that
     let (system_table, _) = system_table.exit_boot_services();
     unsafe { RUNTIME_SERVICES = NonNull::new(system_table.runtime_services() as *const _ as *mut _) };
