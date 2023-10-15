@@ -35,6 +35,7 @@ use core::{
     panic::PanicInfo,
     ptr::NonNull,
 };
+use libelf::Elf;
 use libgraphics::text::{
     next_row,
     TEXT_WRITER_CONTEXT,
@@ -115,14 +116,24 @@ fn main(_image_handle: Handle, mut system_table: SystemTable<Boot>) -> Status {
     // Initialize file system over simple file system driver
     let mut file_system_context = match init_file_system_driver(system_table.boot_services()) {
         Err(error) => {
-            panic!("Unable to initialize File System Driver => {} (Shutdown in 10 seconds)", error)
+            panic!("Unable to initialize File System Driver => {} (Shutdown in 10 seconds)", error);
         }
         Ok(context) => context,
     };
 
-    // Load kernel into memory
+    // Load kernel into memory and parse as ELF
     let kernel_data = files::read_file(&mut file_system_context, 0, "\\EFI\\BOOT\\KERNEL.ELF").unwrap();
-    info!("Loaded {} kB of Kernel data into the memory\n", kernel_data.len() / 1024);
+    info!("Loaded {} kB of kernel data into the memory\n", kernel_data.len() / 1024);
+
+    let elf = match Elf::from_bytes(kernel_data) {
+        Err(error) => {
+            panic!("Unable to read kernel data as ELF file => {0} (Shutdown in 10 seconds)", error);
+        }
+        Ok(elf_file) => elf_file
+    };
+    info!("Successfully parsed kernel as ELF file (Kernel ELF located at {:p})\n", &elf);
+    let a = elf.file_header();
+
 
     // Exit Boot Services and notify user about that
     let (system_table, _) = system_table.exit_boot_services();
