@@ -1,7 +1,7 @@
 [package]
 name = "libgraphics"
 description = "LibGraphics is a library to instrument the Graphics Output Protocol for drawing things or writing Text"
-categories = ["memory-management", "no-std", "embedded"]
+categories = ["no-std", "embedded"]
 version = "1.0.0-dev.1"
 
 # Variables from workspace

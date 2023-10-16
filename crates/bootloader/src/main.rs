@@ -122,17 +122,8 @@ fn main(_image_handle: Handle, mut system_table: SystemTable<Boot>) -> Status {
     };
 
     // Load kernel into memory and parse as ELF
-    let kernel_data = files::read_file(&mut file_system_context, 0, "\\EFI\\BOOT\\KERNEL.ELF").unwrap();
-    info!("Loaded {} kB of kernel data into the memory\n", kernel_data.len() / 1024);
-
-    let elf = match Elf::from_bytes(kernel_data) {
-        Err(error) => {
-            panic!("Unable to read kernel data as ELF file => {0} (Shutdown in 10 seconds)", error);
-        }
-        Ok(elf_file) => elf_file
-    };
-    info!("Successfully parsed kernel as ELF file (Kernel ELF located at {:p})\n", &elf);
-    let a = elf.file_header();
+    //let kernel_data = files::read_file(&mut file_system_context, 0, "\\EFI\\BOOT\\KERNEL.ELF").unwrap();
+    //info!("Loaded {} kB of kernel data into the memory\n", kernel_data.len() / 1024);
 
 
     // Exit Boot Services and notify user about that

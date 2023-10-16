@@ -1,11 +1,8 @@
 [package]
-name = "kernel"
-description = "This is the official Kernel of OverflowOS"
+name = "libcore"
+description = "LibCore provides functionalities which are shared between bootloader and kernel"
 categories = ["memory-management", "no-std", "embedded"]
 version = "1.0.0-dev.1"
-
-[package.metadata.osimage]
-kind = "kernel"
 
 # Variables from workspace
 license-file.workspace = true
@@ -15,6 +12,3 @@ edition.workspace = true
 
 [dependencies]
 libcpu.workspace = true
-libgraphics.workspace = true
-libelf.workspace = true
-log = "0.4.20"

@@ -15,3 +15,4 @@ thiserror-no-std = "2.0.2"
 libcpu = { git = "https://github.com/Cach30verfl0w/libcpu" }
 libgraphics = { path = "crates/libgraphics" }
 libelf = { git = "https://github.com/Cach30verfl0w/libelf", default-features = false }
+libcore = { path = "crates/libcore" }
