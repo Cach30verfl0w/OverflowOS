@@ -17,5 +17,5 @@ pub enum Error {
     NoContext,
 
     #[error("From String Error: {0}")]
-    FromStr(#[from] FromStrError)
+    FromStr(#[from] FromStrError),
 }

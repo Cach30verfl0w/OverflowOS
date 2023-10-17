@@ -58,7 +58,10 @@ pub fn read_file<'a>(
     context: &mut SimpleFileSystemContext, index: usize, file_name: &str,
 ) -> Result<&'a mut [u8], Error> {
     // Open file for read
-    let mut handle = context.volumes.get_mut(index).unwrap()
+    let mut handle = context
+        .volumes
+        .get_mut(index)
+        .unwrap()
         .open(CString16::try_from(file_name)?.as_ref(), FileMode::Read, FileAttribute::empty())?
         .into_regular_file()
         .unwrap();

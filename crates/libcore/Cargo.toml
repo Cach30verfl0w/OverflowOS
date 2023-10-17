@@ -11,4 +11,5 @@ authors.workspace = true
 edition.workspace = true
 
 [dependencies]
+uefi = "0.24.0"
 libcpu.workspace = true

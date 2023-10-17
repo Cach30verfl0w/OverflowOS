@@ -8,10 +8,11 @@ pub(crate) mod files;
 
 extern crate alloc;
 
-use core::fmt::Write;
-use libcpu::{
-    halt_cpu
+use core::fmt::{
+    Debug,
+    Write,
 };
+use libcpu::halt_cpu;
 use libgraphics::embedded_graphics::{
     mono_font::ascii,
     pixelcolor::Rgb888,
@@ -32,10 +33,11 @@ use crate::{
     files::init_file_system_driver,
 };
 use core::{
+    alloc::GlobalAlloc,
     panic::PanicInfo,
     ptr::NonNull,
 };
-use libelf::Elf;
+use libcore::FrameAllocator;
 use libgraphics::text::{
     next_row,
     TEXT_WRITER_CONTEXT,
@@ -49,7 +51,10 @@ use uefi::{
         BootServices,
         RuntimeServices,
     },
-    table::runtime::ResetType,
+    table::{
+        boot::MemoryType,
+        runtime::ResetType,
+    },
 };
 
 static mut BOOT_SERVICES: Option<NonNull<BootServices>> = None;
@@ -122,15 +127,52 @@ fn main(_image_handle: Handle, mut system_table: SystemTable<Boot>) -> Status {
     };
 
     // Load kernel into memory and parse as ELF
-    //let kernel_data = files::read_file(&mut file_system_context, 0, "\\EFI\\BOOT\\KERNEL.ELF").unwrap();
-    //info!("Loaded {} kB of kernel data into the memory\n", kernel_data.len() / 1024);
-
+    //let kernel_data = files::read_file(&mut file_system_context, 0, "\\EFI\\BOOT\\KERNEL.ELF")
+    // .unwrap();
+    // info!("Loaded {} kB of kernel data into the memory\n",
+    // kernel_data.len() / 1024);
 
     // Exit Boot Services and notify user about that
-    let (system_table, _) = system_table.exit_boot_services();
+    let (system_table, memory_map) = system_table.exit_boot_services();
     unsafe { RUNTIME_SERVICES = NonNull::new(system_table.runtime_services() as *const _ as *mut _) };
+
     info!("Exited UEFI Boot Services, system is now in Runtime Services\n");
 
-    info!("CPU is now halting!");
+    let mut frame_allocator = FrameAllocator::new(&memory_map, 4096);
+    info!(
+        "FrameAllocator(Management Table: {:p}, Page Size: {} KiB, Start Address: 0x{:X}, End \
+         Address: 0x{:X})\n",
+        frame_allocator.frame_table.borrow().frame_table,
+        frame_allocator.page_size,
+        frame_allocator.start_address,
+        frame_allocator.stop_address
+    );
+    info!(
+        "Reserved memory 0x{:?} from 0x{:?} for memory allocation\n",
+        frame_allocator.start_address, frame_allocator.stop_address
+    );
+
+    for descriptor in memory_map.entries() {
+        match descriptor.ty {
+            MemoryType::BOOT_SERVICES_DATA
+            | MemoryType::BOOT_SERVICES_CODE
+            | MemoryType::PERSISTENT_MEMORY
+            | MemoryType::CONVENTIONAL => {}
+            _ => {
+                info!(
+                    "Reserving {:?} page as frame in Frame Allocator ({} pages with 4 KiB)\n",
+                    descriptor.ty, descriptor.page_count
+                );
+                frame_allocator.reserve_memory_section(&descriptor);
+            }
+        }
+    }
+
+    info!(
+        "{} frames of {} frames allocated, {} frames remaining\n",
+        frame_allocator.allocated_frames(),
+        frame_allocator.available_frames(),
+        frame_allocator.remaining_frames()
+    );
     halt_cpu();
 }
